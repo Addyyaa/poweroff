@@ -5,6 +5,7 @@ from ftplib import FTP
 import logging
 import time
 import re
+import os
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
 
@@ -33,16 +34,21 @@ def match(express, string):
 
 def ftp_upload(host, port=21, user_name="", password=''):
     remote_file_path = '/software/mqtt/mymqtt'
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
+    resource_path = os.path.join(base_path, 'resource')
+    file_path = os.path.join(resource_path, 'mymqtt')
     with FTP(host) as ftp:
         response = ftp.login(user=user_name, passwd=password)
         welcome_message = ftp.getwelcome()
         if "230" in response and "220" in welcome_message:
             logging.info("FTP登录成功！")
             try:
-                with open('resource/mymqtt', 'rb') as file:
+                with open(file_path, 'rb') as file:
                     ftp.storbinary(f"STOR {remote_file_path}", file)
             except Exception as e:
                 print(f"上传文件时发生错误: {e}")
+                time.sleep(10)
+                sys.exit()
         else:
             logging.error("FTP登录失败！")
 
