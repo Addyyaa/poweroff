@@ -34,23 +34,47 @@ def match(express, string):
 
 def ftp_upload(host, port=21, user_name="", password=''):
     remote_file_path = '/software/mqtt/mymqtt'
+    remote_file_path_ini = '/software/mqtt.ini'
     base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
     resource_path = os.path.join(base_path, 'resource')
-    file_path = os.path.join(resource_path, 'mymqtt')
+    Chinese_file_path = os.path.join(resource_path, 'China/mymqtt')
+    American_file_path = os.path.join(resource_path, 'USA/mymqtt')
+    file_path = ""
+    paths = {}
+    while True:
+        choice = input("请选择测试服务器：\n1.中国\n2.美国\n")
+        if choice == '1':
+            file_path = Chinese_file_path
+            break
+        elif choice == '2':
+            file_path = American_file_path
+            ini_path = os.path.join(resource_path, 'USA/mqtt.ini')
+            paths[file_path] = remote_file_path
+            paths[ini_path] = remote_file_path_ini
+            break
+        else:
+            print("输入有误，请重新输入")
+            continue
     with FTP(host) as ftp:
         response = ftp.login(user=user_name, passwd=password)
         welcome_message = ftp.getwelcome()
         if "230" in response and "220" in welcome_message:
             logging.info("FTP登录成功！")
             try:
-                with open(file_path, 'rb') as file:
-                    ftp.storbinary(f"STOR {remote_file_path}", file)
+                if choice == '1':
+                    with open(file_path, 'rb') as file:
+                        ftp.storbinary(f"STOR {remote_file_path}", file)
+                else:
+                    for key, value in paths.items():
+                        with open(key, 'rb') as file:
+                            ftp.storbinary(f"STOR {value}", file)
             except Exception as e:
                 print(f"上传文件时发生错误: {e}")
                 time.sleep(10)
                 sys.exit()
         else:
             logging.error("FTP登录失败！")
+    return choice
 
 
 def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
@@ -73,7 +97,7 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
             logging.info(f'mymqtt已成功删除！')
             tn.write(b"tcpsvd -vE 0.0.0.0 21 ftpd -w / &\n")
             # 传入新的mymqtt文件
-            ftp_upload(host)
+            choice = ftp_upload(host)
             # 检查文件是否成功传入
             tn.write(b"ls software/mqtt/mymqtt \n")
             output = tn.read_until(b"/software/mqtt/mymqtt", timeout=2)
@@ -120,8 +144,12 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
                     logging.error("未匹配到地区信息，程序即将退出")
                     sys.exit()
                 # 重启mqtt服务
-                tn.write(b"kill -9 $(pidof mymqtt) && tail -f /software/mqtt/mymqtt.log | { if grep -q "
-                         b"139.224.192.36; then kill -9 $(pidof tail) ; fi; }\n")
+                if choice == "1":
+                    tn.write(b"kill -9 $(pidof mymqtt) && tail -f /software/mqtt/mymqtt.log | { if grep -q "
+                             b"139.224.192.36; then kill -9 $(pidof tail) ; fi; }\n")
+                else:
+                    tn.write(b"kill -9 $(pidof mymqtt) && tail -f /software/mqtt/mymqtt.log | { if grep -q "
+                             b"18.215.241.226; then kill -9 $(pidof tail) ; fi; }\n")
                 output = tn.read_until(b"Killed", timeout=2)
                 if "Killed" in output.decode("utf-8"):
                     logging.info(f'mymqtt重启成功,检测到测试服务器,程序即将退出！')
@@ -148,3 +176,7 @@ if __name__ == '__main__':
         telnet_connect(host)
     except socket.timeout:
         logging.error(f"连接超时，请检查设备是否异常: {host}")
+    except Exception as e:
+        logging.error(e)
+        time.sleep(4)
+        sys.exit()
