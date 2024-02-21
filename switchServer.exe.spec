@@ -3,9 +3,9 @@
 
 a = Analysis(
     ['telenet3.py'],
-    pathex=['C:/Users/Administrator/PycharmProjects/poweroff'],
+    pathex=['D:/Project/poweroff'],
     binaries=[],
-    datas=[('C:/Users/Administrator/PycharmProjects/poweroff/resource', 'resource')],
+    datas=[('D:/Project/poweroff/resource', 'resource')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -34,5 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    onefile=True,
+    icon='resource/icon.ico'
 )
