@@ -222,8 +222,10 @@ if __name__ == '__main__':
     try:
         telnet_connect(host)
     except socket.timeout:
-        logging.error(f"连接超时，请检查设备是否异常: {host}")
+        logging.error(f"连接超时，请检查设备是否异常,ip是否正确: {host}")
+        input("按回车键退出程序")
     except Exception as e:
         logging.error(e)
         time.sleep(4)
+        print("程序即将退出")
         sys.exit()
