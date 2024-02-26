@@ -142,25 +142,30 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
             file = format_output(directories_and_files, output)
             if file:
                 logging.info(f'mymqtt已成功传入！')
-                # 授权
-                tn.write(b"chmod +x /software/mqtt/mymqtt\n")
-                # 检查文件是否拥有可执行权限
-                tn.read_until(b"chmod +x /software/mqtt/mymqtt")
-                tn.write(b"ls -l /software/mqtt/mymqtt\n")
-                output = tn.read_until(b"ls -l /software/mqtt/mymqtt*", timeout=2)
-                output_str = output.decode("utf-8")
-                properties = match(r'/software/mqtt/mymqtt\r\n(.{4})', output_str)
-                if properties:
-                    is_x = properties.group(1)
-                    is_x = list(is_x)
-                    is_x = is_x[3]
-                    if is_x == "x":
-                        logging.info(f'mymqtt拥有可执行权限！')
+                n = 0
+                while n < 4:
+                    logging.info(f"第{n+1}次授权文件可执行权限")
+                    n += 1
+                    # 授权
+                    tn.write(b"chmod +x /software/mqtt/mymqtt\n")
+                    # 检查文件是否拥有可执行权限
+                    tn.read_until(b"chmod +x /software/mqtt/mymqtt")
+                    tn.write(b"ls -l /software/mqtt/mymqtt\n")
+                    output = tn.read_until(b"ls -l /software/mqtt/mymqtt*", timeout=2)
+                    output_str = output.decode("utf-8")
+                    properties = match(r'/software/mqtt/mymqtt\r\n(.{4})', output_str)
+                    if properties:
+                        is_x = properties.group(1)
+                        is_x = list(is_x)
+                        is_x = is_x[3]
+                        if is_x == "x":
+                            logging.info(f'mymqtt拥有可执行权限！')
+                            break
+                        else:
+                            logging.error(f'mymqtt没有拥有可执行权限！property：{properties.group(1)}')
                     else:
-                        logging.error(f'mymqtt没有拥有可执行权限！property：{properties.group(1)}')
-                else:
-                    logging.error("未匹配到权限信息，程序即将退出")
-                    sys.exit()
+                        logging.error("未匹配到权限信息，程序即将退出")
+                        sys.exit()
                 # 修改地区信息
                 tn.write(b'echo "[local]" > /software/local.ini\n')
                 tn.write(b'echo "local=1" >> /software/local.ini\n')
