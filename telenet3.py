@@ -125,7 +125,9 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
         logging.info(f'已成功登录到设备：{host}')
         tn.write(b"rm  /software/mqtt/mymqtt\n")
         tn.write(b"ls software/mqtt/mymqtt \n")
-        output = tn.read_until(b"/software/mqtt/mymqtt", timeout=2)
+        pattern = re.escape("/software/mqtt/mymqtt")
+        output = tn.read_until(pattern.encode(), timeout=2)
+        print(output)
         directories_and_files = re.findall(b'\x1b\[\d+;\d+m(\S+?)\x1b\[0m', output)
         # 格式化输出
         content = format_output(directories_and_files, output)
