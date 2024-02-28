@@ -128,17 +128,24 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
                 match = re.search(pattern, content)
                 if match:
                     content = match.group(1).decode('utf-8')
-                    print(f"content:{content}")
                 else:
                     logging.error("未找到匹配的内容")
                 if content == "upgrade/SStarOta.bin.gz":
                     logging.info(f'检测到升级文件，即将开始升级！')
-                    tn.write(b"/upgrade/upgrade.sh\n")
-                    time.sleep(10)
+                    tn.write(b"/upgrade/upgrade.sh &\n")
                     c = tn.read_until(b'ash: you need to specify whom to kill', timeout=2)
-                    print(c)
-                    s = tn.read_very_eager().decode('ascii')
-                    print(s)
+                    if c:
+                        start_time = time.time()
+                        while True:
+                            if time.time() - start_time <= 60:
+                                chars = "一\|/"
+                                for char in chars:
+                                    sys.stdout.write('\r' + char)
+                                    sys.stdout.flush()
+                                    time.sleep(0.5)
+                            else:
+                                break
+                        input("\n升级完成！按回车键退出程序。")
                 else:
                     input("未找到升级文件，请重新尝试运行该文件，按Enter结束程序")
             else:
