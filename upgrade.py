@@ -120,7 +120,6 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
             # 检查文件是否成功传入
             tn.write(b"find /upgrade/ -maxdepth 1 -name SStarOta.bin.gz \n")
             output = tn.read_until(b"/upgrade/SStarOta.bin.gz", timeout=2)
-            print(f"output:{output}")
             last_index = output.rfind(b'\r\n')  # 获取最后一个 \r\n 的索引位置
             if last_index != -1:  # 如果找到了 \r\n
                 content = output[last_index + 2:]  # 获取最后一个 \r\n 后面的内容
