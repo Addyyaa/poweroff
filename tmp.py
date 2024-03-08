@@ -1,25 +1,13 @@
-import re
+from PIL import Image, ExifTags
 
-# 读取文件内容
-file_path = 'resource/enn.js'
-with open(file_path, 'r') as file:
-    data = file.read()
-
-# pattern = r'".*?":\s*"(.*?)"'
-# matches = re.findall(pattern, data)
-# for match in matches:
-#     print(match)
-
-# pattern1 = r":'(.*?)'"
-# pattern2 = r':"(.*?)"'
-# match1 = re.findall(pattern1, data)
-# match2 = re.findall(pattern2, data)
-pattern = r":\s*[\"'](.*?)\s*[\"']"
-match = re.findall(pattern, data)
-# 打印匹配结果
-# print("使用单引号模式匹配到的结果：", match1)
-# print("使用双引号模式匹配到的结果：", match2)
-print("使用正则表达式模式匹配到的结果：", match)
-with open('resource/output.txt', 'w') as output_file:
-    for match in match:
-        output_file.write(match + '\n')
+# 读取图片分辨率信息
+image = Image.open('C:/Users/SHEN/Desktop/微信图片_20240229104604.jpg')
+image2 = Image.open('C:/Users/SHEN/Desktop/变横.jpg')
+width, height = image.size
+width2, height2 = image2.size
+exif_data = image2.getexif()
+if exif_data is not None:
+    num = [2, 3, 4, 5, 6, 7, 8]
+    for i in num:
+        exif_data.update({0x0112: i})
+        image2.save(f'C:/Users/SHEN/Desktop/new-{i}.jpg', exif=exif_data)

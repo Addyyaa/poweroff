@@ -36,6 +36,9 @@ def match(express, string):
 
 
 def ftp_upload(host, port=21, user_name="", password=''):
+    """
+    Uploads files to an FTP server based on user's choice and configuration.
+    """
     remote_file_path = '/software/mqtt/mymqtt'
     remote_file_path_ini = '/software/mqtt.ini'
     base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
@@ -114,6 +117,13 @@ def ftp_upload(host, port=21, user_name="", password=''):
 
 
 def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
+    """
+    Connects to a telnet server and logs in with the provided credentials.
+    :param host: The hostname or IP address of the telnet server.
+    :param port: The port number of the telnet server (default is 23).
+    :param user_name: The username for logging into the telnet server (default is "root").
+    :param password: The password for logging into the telnet server (default is 'ya!2dkwy7-934^').
+    """
     tn = telnetlib.Telnet(host, port, timeout=3)
     tn.read_until(b"(none) login: ")
     tn.write(user_name.encode("ascii") + b"\n")

@@ -60,6 +60,19 @@ def ftp_upload(host, port=21, user_name="", password=''):
         else:
             print("输入有误，请重新输入")
             continue
+
+    while True:
+        update_firmware = input("是否更新出厂内置固件：\n1.是\n2.否\n请选择: ")
+        if update_firmware == '1':
+            update_firmware = True
+            break
+        elif update_firmware == '2':
+            update_firmware = False
+            break
+        else:
+            print("输入有误，请重新输入")
+            continue
+
     with FTP(host) as ftp:
         response = ftp.login(user=user_name, passwd=password)
         welcome_message = ftp.getwelcome()
@@ -86,7 +99,7 @@ def ftp_upload(host, port=21, user_name="", password=''):
                     sys.exit()
         else:
             logging.error("FTP登录失败！")
-    return choice
+    return choice, update_firmware
 
 
 def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
@@ -112,7 +125,7 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
             tn.write(b"tcpsvd -vE 0.0.0.0 21 ftpd -w / &\n")
             tn.read_until(b'tcpsvd: listening on 0.0.0.0:21, starting', timeout=2)
             # 传入新的升级包文件
-            ftp_upload(host)
+            choice, update_firmware = ftp_upload(host)
             # 关闭ftp
             tn.write(b"kill -9 $(pidof tcpsvd)\n")
             tn.read_until(b'Killed', timeout=2)
@@ -130,8 +143,47 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
                 else:
                     logging.error("未找到匹配的内容")
                 if content == "upgrade/SStarOta.bin.gz":
+                    # 根据参数觉得是否升级内置固件
+                    if update_firmware == True:
+                        tn.write(b"rm /upgrade/restore/SStarOta.bin.gz\n")
+                        tn.write(b"echo $?\n")
+                        s =tn.read_until(b"1" or b"0", timeout=2)
+                        last_index = s.rfind(b'\r\n')  # 获取最后一个 \r\n 的索引位置
+                        if last_index != -1:  # 如果找到了 \r\n
+                            content = str(s[last_index + 3:])  # 获取最后一个 \r\n 后面的内容
+                            if content is not None:
+                                if content == "b'1'":
+                                    print("已删除原工厂内置固件，开始更新固件...")
+                                    tn.write(b"cp /upgrade/SStarOta.bin.gz /upgrade/restore/\n ")
+                                    a = time.time()
+                                    tn.write(b"ls /upgrade/restore/SStarOta.bin.gz\n")
+                                    s = tn.read_until(b"No such file or directory", timeout=10)
+                                    print(s)
+                                    b = time.time()
+                                    print(f"耗时：{b-a}秒")
+                                    sys.exit()
+                                    last_index = s.rfind(b'\r\n')  # 获取最后一个 \r\n 的索引位置
+                                    if last_index != -1:  # 如果找到了 \r\n
+                                        content = output[last_index + 3:]  # 获取最后一个 \r\n 后面的内容
+                                        pattern = rb'/(\S+)'
+                                        match = re.search(pattern, content)
+                                        if match:
+                                            content = match.group(1).decode('utf-8')
+                                            print(f"content: {content}")
+                                            if content == "0":
+                                                logging.info(f'内置固件升级成功！')
+                                            else:
+                                                logging.error("内置固件升级失败")
+                                        else:
+                                            logging.error("未找到匹配的内容")
+                                    else:
+                                        logging.error("未成功删除原始固件")
+                            else:
+                                logging.error("未找到匹配的内容")
+                    else:
+                        input("未找到升级文件，请重新尝试运行该文件，按Enter结束程序")
                     logging.info(f'检测到升级文件，即将开始升级！')
-                    tn.write(b"/upgrade/upgrade.sh &\n")
+                    # tn.write(b"/upgrade/upgrade.sh &\n")
                     c = tn.read_until(b'ash: you need to specify whom to kill', timeout=2)
                     if c:
                         start_time = time.time()
