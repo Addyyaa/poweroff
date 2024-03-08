@@ -156,9 +156,15 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
                                     print("已删除原工厂内置固件，开始更新固件...")
                                     tn.write(b"cp /upgrade/SStarOta.bin.gz /upgrade/restore/\n ")
                                     a = time.time()
-                                    tn.write(b"ls /upgrade/restore/SStarOta.bin.gz\n")
-                                    s = tn.read_until(b"No such file or directory", timeout=10)
-                                    print(s)
+                                    while True:
+                                        tn.write(b"ls /upgrade/restore/SStarOta.bin.gz\n")
+                                        s = tn.read_until(b"No such file or directory", timeout=1)
+                                        print(f"s: {s}")
+                                        if s is not None:
+                                            continue
+                                        else:
+                                            break
+                                        print(s)
                                     b = time.time()
                                     print(f"耗时：{b-a}秒")
                                     sys.exit()
