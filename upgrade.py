@@ -159,10 +159,9 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
                                     while True:
                                         tn.write(b"ls /upgrade/restore/SStarOta.bin.gz\n")
                                         s = tn.read_until(b"No such file or directory", timeout=1)
+                                        s = str(s)
                                         print(f"s: {s}")
-                                        if s is not None:
-                                            continue
-                                        else:
+                                        if "No such file or directory" not in s:
                                             break
                                         print(s)
                                     b = time.time()
