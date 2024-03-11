@@ -18,6 +18,12 @@ def format_output(directories_and_files, color_string):
         formatted_output += f'\x1b[1;{color_code}m{item.decode("utf-8")}\x1b[0m  '  # 添加蓝色
     return formatted_output
 
+def last_content(tn_str):
+    content = tn_str.rfind(b"\r\n")
+    if content == -1:
+        return None
+    else:
+        return content
 
 def ip_check(ip):
     if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip):
@@ -99,6 +105,8 @@ def ftp_upload(host, port=21, user_name="", password=''):
                     sys.exit()
         else:
             logging.error("FTP登录失败！")
+            input("按回车键退出程序")
+            sys.exit()
     return choice, update_firmware
 
 
@@ -154,42 +162,28 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
                             if content is not None:
                                 if content == "b'1'":
                                     print("已删除原工厂内置固件，开始更新固件...")
-                                    tn.write(b"cp /upgrade/SStarOta.bin.gz /upgrade/restore/\n ")
-                                    a = time.time()
-                                    while True:
-                                        tn.write(b"ls /upgrade/restore/SStarOta.bin.gz\n")
-                                        s = tn.read_until(b"No such file or directory", timeout=1)
-                                        s = str(s)
-                                        print(f"s: {s}")
-                                        if "No such file or directory" not in s:
-                                            break
-                                        print(s)
-                                    b = time.time()
-                                    print(f"耗时：{b-a}秒")
-                                    sys.exit()
-                                    last_index = s.rfind(b'\r\n')  # 获取最后一个 \r\n 的索引位置
-                                    if last_index != -1:  # 如果找到了 \r\n
-                                        content = output[last_index + 3:]  # 获取最后一个 \r\n 后面的内容
-                                        pattern = rb'/(\S+)'
-                                        match = re.search(pattern, content)
-                                        if match:
-                                            content = match.group(1).decode('utf-8')
-                                            print(f"content: {content}")
-                                            if content == "0":
-                                                logging.info(f'内置固件升级成功！')
-                                            else:
-                                                logging.error("内置固件升级失败")
-                                        else:
-                                            logging.error("未找到匹配的内容")
+                                    tn.write(b"cp /upgrade/SStarOta.bin.gz /upgrade/restore/ && date\n ")
+                                    tn.read_until(b"UTC", timeout=10)
+                                    # 检查固件是否更新成功
+                                    tn.write(b"find /upgrade/restore -maxdepth 1 -name SStarOta.bin.gz \n")
+                                    output = tn.read_until(b"/upgrade/restore/SStarOta.bin.gz", timeout=2)
+                                    index = last_content(output)
+                                    ct = output[index + 2:].decode('utf-8')
+                                    if ct == "/upgrade/restore/SStarOta.bin.gz":
+                                        print("出厂内置固件更新成功！")
                                     else:
-                                        logging.error("未成功删除原始固件")
+                                        input("出厂内置固件更新失败，按回车键退出程序")
+                                        sys.exit()
+                                else:
+                                    logging.error("未成功删除原始固件，请重新尝试！")
                             else:
                                 logging.error("未找到匹配的内容")
-                    else:
-                        input("未找到升级文件，请重新尝试运行该文件，按Enter结束程序")
+                        else:
+                            logging.error("未找到匹配\\r\\n")
+                    # 开始升级pad固件
                     logging.info(f'检测到升级文件，即将开始升级！')
-                    # tn.write(b"/upgrade/upgrade.sh &\n")
-                    c = tn.read_until(b'ash: you need to specify whom to kill', timeout=2)
+                    tn.write(b"/upgrade/upgrade.sh &\n")
+                    c = tn.read_until(b'ash: you need to specify whom to kill', timeout=20)
                     if c:
                         start_time = time.time()
                         while True:
@@ -207,10 +201,11 @@ def telnet_connect(host, port=23, user_name="root", password='ya!2dkwy7-934^'):
             else:
                 input("未找到升级文件，请重新尝试运行该文件，按Enter结束程序")
         else:
-            logging.error(f'SStarOta.bin.gz 删除失败！')
+            input("SStarOta.bin.gz 删除失败！按回车键退出程序")
             sys.exit()
     else:
-        logging.error(f'登录设备 {host} 失败')
+        input(f"登录设备{host}失败，请检查设备是否正常，按回车键退出程序")
+        sys.exit()
 
 
 if __name__ == '__main__':
@@ -228,6 +223,6 @@ if __name__ == '__main__':
         input("按回车键退出程序")
     except Exception as e:
         logging.error(e)
-        time.sleep(4)
         print("程序即将退出")
+        time.sleep(4)
         sys.exit()
