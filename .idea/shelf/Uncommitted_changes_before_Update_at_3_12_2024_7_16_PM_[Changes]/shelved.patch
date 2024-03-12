@@ -1,0 +1,159 @@
+Index: upgrade.spec
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># -*- mode: python ; coding: utf-8 -*-\r\n\r\n\r\na = Analysis(\r\n    ['upgrade.py'],\r\n    pathex=['D:/Project/poweroff'],\r\n    binaries=[],\r\n    datas=[('D:/Project/poweroff/resource', 'resource')],\r\n    hiddenimports=[],\r\n    hookspath=[],\r\n    hooksconfig={},\r\n    runtime_hooks=[],\r\n    excludes=[],\r\n    noarchive=False,\r\n    icon='resource/upgrade.ico'\r\n)\r\npyz = PYZ(a.pure)\r\n\r\nexe = EXE(\r\n    pyz,\r\n    a.scripts,\r\n    a.binaries,\r\n    a.datas,\r\n    [],\r\n    name='upgrade',\r\n    debug=False,\r\n    bootloader_ignore_signals=False,\r\n    strip=False,\r\n    upx=True,\r\n    upx_exclude=[],\r\n    runtime_tmpdir=None,\r\n    console=True,\r\n    disable_windowed_traceback=False,\r\n    argv_emulation=False,\r\n    target_arch=None,\r\n    codesign_identity=None,\r\n    entitlements_file=None,\r\n    icon=['resource\\\\upgrade.ico'],\r\n)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/upgrade.spec b/upgrade.spec
+--- a/upgrade.spec	(revision f3370813af4289506bae25c063be1c9f023f3c4a)
++++ b/upgrade.spec	(date 1709918100998)
+@@ -3,9 +3,9 @@
+ 
+ a = Analysis(
+     ['upgrade.py'],
+-    pathex=['D:/Project/poweroff'],
++    pathex=['C:/Users/Administrator/PycharmProjects/poweroff'],
+     binaries=[],
+-    datas=[('D:/Project/poweroff/resource', 'resource')],
++    datas=[('resource', 'resource')],
+     hiddenimports=[],
+     hookspath=[],
+     hooksconfig={},
+@@ -35,5 +35,5 @@
+     target_arch=None,
+     codesign_identity=None,
+     entitlements_file=None,
+-    icon=['resource\\upgrade.ico'],
++    icon=['resource/upgrade.ico'],
+ )
+Index: .idea/poweroff.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"PYTHON_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\">\r\n    <content url=\"file://$MODULE_DIR$\">\r\n      <excludeFolder url=\"file://$MODULE_DIR$/.venv\" />\r\n    </content>\r\n    <orderEntry type=\"jdk\" jdkName=\"Python 3.12 (poweroff) (2)\" jdkType=\"Python SDK\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/poweroff.iml b/.idea/poweroff.iml
+--- a/.idea/poweroff.iml	(revision f3370813af4289506bae25c063be1c9f023f3c4a)
++++ b/.idea/poweroff.iml	(date 1709988886226)
+@@ -7,4 +7,8 @@
+     <orderEntry type="jdk" jdkName="Python 3.12 (poweroff) (2)" jdkType="Python SDK" />
+     <orderEntry type="sourceFolder" forTests="false" />
+   </component>
++  <component name="PyDocumentationSettings">
++    <option name="format" value="PLAIN" />
++    <option name="myDocStringFormat" value="Plain" />
++  </component>
+ </module>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"d1ac1633-e887-4d83-b3c4-36c47095bf41\" name=\"Changes\" comment=\"增加海外测试环境1\">\r\n      <change beforePath=\"$PROJECT_DIR$/upgrade.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/upgrade.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitHubPullRequestSearchHistory\">{\r\n  &quot;lastFilter&quot;: {\r\n    &quot;state&quot;: &quot;OPEN&quot;,\r\n    &quot;assignee&quot;: &quot;Addyyaa&quot;\r\n  }\r\n}</component>\r\n  <component name=\"GithubPullRequestsUISettings\">\r\n    <option name=\"selectedUrlAndAccountId\">\r\n      <UrlAndAccount>\r\n        <option name=\"accountId\" value=\"58ce2494-9ab0-4f92-9563-e63b805ef4a4\" />\r\n        <option name=\"url\" value=\"https://github.com/Addyyaa/poweroff.git\" />\r\n      </UrlAndAccount>\r\n    </option>\r\n  </component>\r\n  <component name=\"HighlightingSettingsPerFile\">\r\n    <setting file=\"file://$PROJECT_DIR$/resource/USA/mqtt.ini\" root0=\"FORCE_HIGHLIGHTING\" />\r\n  </component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 6\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2aGlop9KVWVkyIIRsf2K5kHbl0X\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"Python.main.executor\": \"Run\",\r\n    \"Python.telenet3.executor\": \"Run\",\r\n    \"Python.upgrade.executor\": \"Run\",\r\n    \"RunOnceActivity.OpenProjectViewOnStart\": \"true\",\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"last_opened_file_path\": \"C:/Users/Administrator/PycharmProjects/poweroff\",\r\n    \"node.js.detected.package.eslint\": \"true\",\r\n    \"node.js.detected.package.tslint\": \"true\",\r\n    \"node.js.selected.package.eslint\": \"(autodetect)\",\r\n    \"node.js.selected.package.tslint\": \"(autodetect)\",\r\n    \"nodejs_package_manager_path\": \"npm\",\r\n    \"settings.editor.selected.configurable\": \"preferences.pluginManager\",\r\n    \"vue.rearranger.settings.migration\": \"true\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"C:\\Users\\Administrator\\PycharmProjects\\poweroff\" />\r\n      <recent name=\"C:\\Users\\Administrator\\PycharmProjects\\poweroff\\resource\\USA\" />\r\n      <recent name=\"C:\\Users\\Administrator\\PycharmProjects\\poweroff\\resource\\China\" />\r\n    </key>\r\n    <key name=\"MoveFile.RECENT_KEYS\">\r\n      <recent name=\"C:\\Users\\Administrator\\PycharmProjects\\poweroff\\resource\" />\r\n      <recent name=\"C:\\Users\\Administrator\\PycharmProjects\\poweroff\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.upgrade\">\r\n    <configuration name=\"main\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"poweroff\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/main.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"telenet3\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"poweroff\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/telenet3.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"upgrade\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"poweroff\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/upgrade.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.upgrade\" />\r\n        <item itemvalue=\"Python.telenet3\" />\r\n        <item itemvalue=\"Python.main\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-python-sdk-50da183f06c8-2887949eec09-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-233.13135.95\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"SvnConfiguration\">\r\n    <configuration>C:\\Users\\Administrator\\AppData\\Roaming\\Subversion</configuration>\r\n  </component>\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"d1ac1633-e887-4d83-b3c4-36c47095bf41\" name=\"Changes\" comment=\"\" />\r\n      <created>1703952974402</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1703952974402</updated>\r\n      <workItem from=\"1703952977098\" duration=\"57000\" />\r\n      <workItem from=\"1703953059955\" duration=\"153000\" />\r\n      <workItem from=\"1703953471743\" duration=\"8000\" />\r\n      <workItem from=\"1703953484321\" duration=\"1000\" />\r\n      <workItem from=\"1703953516261\" duration=\"3000\" />\r\n      <workItem from=\"1703953554070\" duration=\"21000\" />\r\n      <workItem from=\"1703953778096\" duration=\"39000\" />\r\n      <workItem from=\"1703953917066\" duration=\"33000\" />\r\n      <workItem from=\"1703954098055\" duration=\"552000\" />\r\n      <workItem from=\"1703954668641\" duration=\"4916000\" />\r\n      <workItem from=\"1703959620493\" duration=\"16935000\" />\r\n      <workItem from=\"1704196487819\" duration=\"419000\" />\r\n      <workItem from=\"1705919639380\" duration=\"5533000\" />\r\n      <workItem from=\"1706010060746\" duration=\"95000\" />\r\n      <workItem from=\"1706100120491\" duration=\"1369000\" />\r\n      <workItem from=\"1706110170319\" duration=\"34000\" />\r\n      <workItem from=\"1706785328663\" duration=\"7059000\" />\r\n      <workItem from=\"1706792629397\" duration=\"840000\" />\r\n      <workItem from=\"1706794302258\" duration=\"646000\" />\r\n      <workItem from=\"1706794971454\" duration=\"110000\" />\r\n      <workItem from=\"1708756840443\" duration=\"2603000\" />\r\n      <workItem from=\"1709912219427\" duration=\"5365000\" />\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"增加海外测试环境\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1706792141406</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1706792141406</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00002\" summary=\"增加海外测试环境\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1706793374632</created>\r\n      <option name=\"number\" value=\"00002\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00002\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1706793374632</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00003\" summary=\"增加海外测试环境\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1709912542553</created>\r\n      <option name=\"number\" value=\"00003\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00003\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1709912542553</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00004\" summary=\"增加海外测试环境1\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1709913765118</created>\r\n      <option name=\"number\" value=\"00004\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00004\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1709913765118</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"5\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"增加海外测试环境\" />\r\n    <MESSAGE value=\"增加海外测试环境1\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"增加海外测试环境1\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/telenet3.py</url>\r\n          <option name=\"timeStamp\" value=\"1\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\r\n    <SUITE FILE_PATH=\"coverage/poweroff$main.coverage\" NAME=\"main Coverage Results\" MODIFIED=\"1703977504676\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\r\n    <SUITE FILE_PATH=\"coverage/poweroff$upgrade.coverage\" NAME=\"upgrade Coverage Results\" MODIFIED=\"1709917530918\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\r\n    <SUITE FILE_PATH=\"coverage/poweroff$telenet3.coverage\" NAME=\"telenet3 Coverage Results\" MODIFIED=\"1706790999271\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision f3370813af4289506bae25c063be1c9f023f3c4a)
++++ b/.idea/workspace.xml	(date 1710242163037)
+@@ -4,8 +4,10 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="增加海外测试环境1">
+-      <change beforePath="$PROJECT_DIR$/upgrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/upgrade.py" afterDir="false" />
++    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="已完成内置固件升级   --最新命令的回显可以根据最后一个/r/n的索引开始切片">
++      <change beforePath="$PROJECT_DIR$/.idea/poweroff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/poweroff.iml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/upgrade.spec" beforeDir="false" afterPath="$PROJECT_DIR$/upgrade.spec" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -47,23 +49,23 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent"><![CDATA[{
+-  "keyToString": {
+-    "Python.main.executor": "Run",
+-    "Python.telenet3.executor": "Run",
+-    "Python.upgrade.executor": "Run",
+-    "RunOnceActivity.OpenProjectViewOnStart": "true",
+-    "RunOnceActivity.ShowReadmeOnStart": "true",
+-    "last_opened_file_path": "C:/Users/Administrator/PycharmProjects/poweroff",
+-    "node.js.detected.package.eslint": "true",
+-    "node.js.detected.package.tslint": "true",
+-    "node.js.selected.package.eslint": "(autodetect)",
+-    "node.js.selected.package.tslint": "(autodetect)",
+-    "nodejs_package_manager_path": "npm",
+-    "settings.editor.selected.configurable": "preferences.pluginManager",
+-    "vue.rearranger.settings.migration": "true"
++  <component name="PropertiesComponent">{
++  &quot;keyToString&quot;: {
++    &quot;Python.main.executor&quot;: &quot;Run&quot;,
++    &quot;Python.telenet3.executor&quot;: &quot;Run&quot;,
++    &quot;Python.upgrade.executor&quot;: &quot;Run&quot;,
++    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
++    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
++    &quot;last_opened_file_path&quot;: &quot;C:/Users/Administrator/PycharmProjects/poweroff&quot;,
++    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
++    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
++    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
++    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
++    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
++    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
++    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+   }
+-}]]></component>
++}</component>
+   <component name="RecentsManager">
+     <key name="CopyFile.RECENT_KEYS">
+       <recent name="C:\Users\Administrator\PycharmProjects\poweroff" />
+@@ -192,7 +194,8 @@
+       <workItem from="1706794302258" duration="646000" />
+       <workItem from="1706794971454" duration="110000" />
+       <workItem from="1708756840443" duration="2603000" />
+-      <workItem from="1709912219427" duration="5365000" />
++      <workItem from="1709912219427" duration="5932000" />
++      <workItem from="1709988787798" duration="774000" />
+     </task>
+     <task id="LOCAL-00001" summary="增加海外测试环境">
+       <option name="closed" value="true" />
+@@ -226,7 +229,15 @@
+       <option name="project" value="LOCAL" />
+       <updated>1709913765118</updated>
+     </task>
+-    <option name="localTasksCounter" value="5" />
++    <task id="LOCAL-00005" summary="已完成内置固件升级   --最新命令的回显可以根据最后一个/r/n的索引开始切片">
++      <option name="closed" value="true" />
++      <created>1709918189263</created>
++      <option name="number" value="00005" />
++      <option name="presentableId" value="LOCAL-00005" />
++      <option name="project" value="LOCAL" />
++      <updated>1709918189263</updated>
++    </task>
++    <option name="localTasksCounter" value="6" />
+     <servers />
+   </component>
+   <component name="TypeScriptGeneratedFilesManager">
+@@ -246,7 +257,8 @@
+   <component name="VcsManagerConfiguration">
+     <MESSAGE value="增加海外测试环境" />
+     <MESSAGE value="增加海外测试环境1" />
+-    <option name="LAST_COMMIT_MESSAGE" value="增加海外测试环境1" />
++    <MESSAGE value="已完成内置固件升级   --最新命令的回显可以根据最后一个/r/n的索引开始切片" />
++    <option name="LAST_COMMIT_MESSAGE" value="已完成内置固件升级   --最新命令的回显可以根据最后一个/r/n的索引开始切片" />
+   </component>
+   <component name="XDebuggerManager">
+     <breakpoint-manager>
+@@ -260,7 +272,7 @@
+   </component>
+   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+     <SUITE FILE_PATH="coverage/poweroff$main.coverage" NAME="main Coverage Results" MODIFIED="1703977504676" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+-    <SUITE FILE_PATH="coverage/poweroff$upgrade.coverage" NAME="upgrade Coverage Results" MODIFIED="1709917530918" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
++    <SUITE FILE_PATH="coverage/poweroff$upgrade.coverage" NAME="upgrade Coverage Results" MODIFIED="1709917965548" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+     <SUITE FILE_PATH="coverage/poweroff$telenet3.coverage" NAME="telenet3 Coverage Results" MODIFIED="1706790999271" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+   </component>
+ </project>
+\ No newline at end of file
