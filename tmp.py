@@ -105,6 +105,17 @@ def scan_ip_range(start_ip, end_ip, port):
                 print("无效的屏幕id，请重新输入")
 
     # 对选择的屏幕进行操作
+    for i in upgrade_list:
+        tn_list[i].write(b"cat /customer/config.ini | grep display_type\n")
+        while True:
+            time.sleep(0.3)
+            s = tn.read_very_eager()
+            index = s.rfind(b"PS")
+            if index != -1:
+                break
+        result = s[index::].decode("utf-8")
+        print(result)
+
 
 def main():
     # 设置要扫描的IP地址范围和端口号

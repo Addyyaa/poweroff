@@ -4,15 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="新增出厂内置固件更新（待完善）">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/poweroff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/poweroff.iml" afterDir="false" />
+    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="tmp 增加自动检索屏幕进行升级">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/upgrade/Analysis-00.toc" beforeDir="false" afterPath="$PROJECT_DIR$/build/upgrade/Analysis-00.toc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/upgrade/EXE-00.toc" beforeDir="false" afterPath="$PROJECT_DIR$/build/upgrade/EXE-00.toc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/upgrade/PKG-00.toc" beforeDir="false" afterPath="$PROJECT_DIR$/build/upgrade/PKG-00.toc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/upgrade/upgrade.pkg" beforeDir="false" afterPath="$PROJECT_DIR$/build/upgrade/upgrade.pkg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dist/upgrade.exe" beforeDir="false" afterPath="$PROJECT_DIR$/dist/upgrade.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tmp.py" beforeDir="false" afterPath="$PROJECT_DIR$/tmp.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -249,7 +242,7 @@
       <workItem from="1706794971454" duration="110000" />
       <workItem from="1708756840443" duration="2603000" />
       <workItem from="1709912219427" duration="5365000" />
-      <workItem from="1710203396212" duration="26594000" />
+      <workItem from="1710203396212" duration="28157000" />
     </task>
     <task id="LOCAL-00001" summary="增加海外测试环境">
       <option name="closed" value="true" />
@@ -283,7 +276,14 @@
       <option name="project" value="LOCAL" />
       <updated>1709913765118</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="tmp 增加自动检索屏幕进行升级">
+      <created>1710232312197</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1710232312197</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -303,7 +303,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="增加海外测试环境" />
     <MESSAGE value="增加海外测试环境1" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加海外测试环境1" />
+    <MESSAGE value="tmp 增加自动检索屏幕进行升级" />
+    <option name="LAST_COMMIT_MESSAGE" value="tmp 增加自动检索屏幕进行升级" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -318,7 +319,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/poweroff$upgrade.coverage" NAME="upgrade Coverage Results" MODIFIED="1710117256251" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$telenet3.coverage" NAME="telenet3 Coverage Results" MODIFIED="1709013207740" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/poweroff$tmp.coverage" NAME="tmp Coverage Results" MODIFIED="1710232133771" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$tmp.coverage" NAME="tmp Coverage Results" MODIFIED="1710233386990" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$main.coverage" NAME="main Coverage Results" MODIFIED="1706774385958" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$nmap.coverage" NAME="nmap Coverage Results" MODIFIED="1710148386077" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/AppData/Local/Programs/Python/Python312/Lib/site-packages/nmap" />
   </component>
