@@ -107,11 +107,16 @@ def scan_ip_range(start_ip, end_ip, port):
     # 对选择的屏幕进行操作
     for i in upgrade_list:
         tn_list[i].write(b"cat /customer/config.ini | grep display_type\n")
+        start_time = time.time()
         while True:
             time.sleep(0.3)
             s = tn.read_very_eager()
-            index = s.rfind(b"PS")
+            index = s.rfind(b"=")
             if index != -1:
+                break
+            end_time = time.time()
+            if end_time - start_time > 10:
+                print(f"屏幕{screens[i]}获取配置超时")
                 break
         result = s[index::].decode("utf-8")
         print(result)
