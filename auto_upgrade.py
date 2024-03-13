@@ -14,17 +14,33 @@ def lan_ip_detect():
     # 执行命令并获取输出
     result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
     index = result.rfind("WLAN")
-    lan_content = result[index::]
+    lan_contents = result[index::].splitlines()
+    lan_contents.pop(0)
+    lan_contents.pop(0)
+    lan_content = []
+    for i in lan_contents:
+        if i != "":
+            lan_content.append(i)
+            lan_content.append("\n")
+        else:
+            break
+    lan_content = "".join(lan_content)
     ipv4_str = lan_content[lan_content.lower().find("IPv4".lower())::].splitlines()[0]
-    subnet_mask = lan_content[lan_content.lower().find("Mask".lower())::].splitlines()[0]
-    gate_way = lan_content[lan_content.lower().find("Gateway".lower())::].splitlines()[0]
-    gateway_ip = ip_match(gate_way)
-    subnet_mask = ip_match(subnet_mask)
+    mask_index = lan_content.lower().find("Mask".lower())
+    if mask_index == -1:
+        mask_index = lan_content.lower().find("子网掩码".lower())
+    subnet_mask_str = lan_content[mask_index::].splitlines()[0]
+    gateway_index = lan_content.lower().find("Gateway".lower())
+    if gateway_index == -1:
+        gateway_index = lan_content.lower().find("默认网关".lower())
+    gateway_str = lan_content[gateway_index::]
+    gateway_ip = ip_match(gateway_str)
+    subnet_mask = ip_match(subnet_mask_str)
     network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     # 获取可用主机范围
     start_ip = list(network.hosts())[0]
     end_ip = list(network.hosts())[-1]
-    start_ip =str(start_ip)
+    start_ip = str(start_ip)
     end_ip = str(end_ip)
     return start_ip, end_ip
 
@@ -56,7 +72,7 @@ def get_latest_print(tn: telnetlib.Telnet):
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
         tn = telnetlib.Telnet(host, port, timeout=0.5)
-        s = tn.read_until(b"login: ", timeout=1)
+        s = tn.read_until(b"login: ", timeout=0.5)
         index = tel_print(s)
         result = s[index::].decode("utf-8")
         if "login: " in result:
@@ -286,6 +302,10 @@ def scan_ip_range(start_ip, end_ip, port):
                 screens.extend(list_a)
                 tn_list.append(tn)
                 host_list.append(host)
+    if not screens:
+        input("\n未发现设备，按回车键退出程序")
+        sys.exit()
+
     for index, screen in enumerate(screens):
         available_selection.append(str(index + 1))
         print(f"\n{index + 1}：{screen}")
