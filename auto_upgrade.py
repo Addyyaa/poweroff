@@ -55,7 +55,7 @@ def get_latest_print(tn: telnetlib.Telnet):
         return False
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
-        tn = telnetlib.Telnet(host, port, timeout=1)
+        tn = telnetlib.Telnet(host, port, timeout=0.5)
         s = tn.read_until(b"login: ", timeout=1)
         index = tel_print(s)
         result = s[index::].decode("utf-8")
@@ -268,6 +268,7 @@ def scan_ip_range(start_ip, end_ip, port):
     available_selection = []
     upgrade_list = []
     host_list = []
+    upgrade_screens = []
     # 使用线程池
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = [executor.submit(scan_port, int_to_ip(ip_int), port) for ip_int in range(start, end + 1)]
@@ -293,9 +294,11 @@ def scan_ip_range(start_ip, end_ip, port):
         if selection == "0":
             for i in range(len(tn_list)):
                 upgrade_list.append(i)
+                upgrade_screens.append(screens[i])
             break
         elif selection in available_selection:
             upgrade_list.append(int(selection) - 1)
+            upgrade_screens.append(screens[int(selection) - 1])
             break
         else:
             selection = re.split(r'[ ,;]', selection)
@@ -303,6 +306,7 @@ def scan_ip_range(start_ip, end_ip, port):
             try:
                 for screen in selection:
                     upgrade_list.append(screens.index(screen))
+                    upgrade_screens.append(screen)
                 break
             except ValueError:
                 print("无效的屏幕id，请重新输入")
@@ -341,17 +345,18 @@ def scan_ip_range(start_ip, end_ip, port):
                 indx, code = f.result()
                 if code == 201:
                     print(f"{screens[indx]}未能获取配置，升级失败")
-
+        success_list = []
         for f in futures:
             screen = f.result()
             if screen:
                 print(f"\033[92m{screen}\033[0m升级完成")
-            else:
+                success_list.append(screen)
+        for screen in upgrade_screens:
+            if screen not in success_list:
                 print(f"\033[91m{screen}\033[0m升级失败")
 
         concurrent.futures.wait(futures)
         all_status = all(f.done() for f in futures)
-        print("all_status：", all_status)
         if all_status:
             input("升级完成，请按回车键退出程序")
         else:
