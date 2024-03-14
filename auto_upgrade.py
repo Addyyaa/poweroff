@@ -349,6 +349,9 @@ def scan_ip_range(start_ip, end_ip, port):
         else:
             print("输入有误，请重新输入")
 
+    # 对upgrade_list进行去重
+    upgrade_list = list(set(upgrade_list))
+
     # 使用线程池升级操作
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(upgrade, i, tn_list, screens, host_list, version, update_firmware) for i in upgrade_list]
