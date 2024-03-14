@@ -372,7 +372,7 @@ def scan_ip_range(start_ip, end_ip, port):
         for f in futures:
             screen = f.result()
             if screen:
-                print(f"\033[92m{screen}\033[0m升级完成")
+                print(f"\n\033[92m{screen}\033[0m升级完成", end="")
                 success_list.append(screen)
         for screen in upgrade_screens:
             if screen not in success_list:
@@ -381,7 +381,7 @@ def scan_ip_range(start_ip, end_ip, port):
         concurrent.futures.wait(futures)
         all_status = all(f.done() for f in futures)
         if all_status:
-            input("升级完成，请按回车键退出程序")
+            input("\n升级完成，请按回车键退出程序")
         else:
             input("存在设备升级失败，请检查")
 
