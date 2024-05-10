@@ -1,12 +1,23 @@
 import re
 import subprocess
 import ipaddress
+import socket
 
 def lan_ip_detect():
     # 执行命令并获取输出
     result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-    index = result.rfind("WLAN")
+    host_name = socket.gethostname()
+    host = socket.gethostbyname(host_name)
+    index = result.rfind(host)
+    result = result[index::]
+    index = result.find("Default Gateway")
+    result = result[index::]
+    print(result)
+    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    match = re.search(pattern, result)
+    print(match)
     lan_contents = result[index::].splitlines()
+    print(lan_contents)
     lan_contents.pop(0)
     lan_contents.pop(0)
     lan_content = []
