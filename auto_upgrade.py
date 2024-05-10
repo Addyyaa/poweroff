@@ -36,7 +36,33 @@ def lan_ip_detect():
     gateway_str = lan_content[gateway_index::]
     gateway_ip = ip_match(gateway_str)
     subnet_mask = ip_match(subnet_mask_str)
-    network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+    try:
+        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+    except Exception:
+        index = result.rfind("以太网")
+        lan_contents = result[index::].splitlines()
+        lan_contents.pop(0)
+        lan_contents.pop(0)
+        lan_content = []
+        for i in lan_contents:
+            if i != "":
+                lan_content.append(i)
+                lan_content.append("\n")
+            else:
+                break
+        lan_content = "".join(lan_content)
+        ipv4_str = lan_content[lan_content.lower().find("IPv4".lower())::].splitlines()[0]
+        mask_index = lan_content.lower().find("Mask".lower())
+        if mask_index == -1:
+            mask_index = lan_content.lower().find("子网掩码".lower())
+        subnet_mask_str = lan_content[mask_index::].splitlines()[0]
+        gateway_index = lan_content.lower().find("Gateway".lower())
+        if gateway_index == -1:
+            gateway_index = lan_content.lower().find("默认网关".lower())
+        gateway_str = lan_content[gateway_index::]
+        gateway_ip = ip_match(gateway_str)
+        subnet_mask = ip_match(subnet_mask_str)
+        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     # 获取可用主机范围
     addresses = list(network.hosts())
     start_ip = list(network.hosts())[0]
