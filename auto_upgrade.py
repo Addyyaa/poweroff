@@ -9,60 +9,29 @@ import re
 from ftplib import FTP
 import subprocess
 import ipaddress
+import socket
 
 def lan_ip_detect():
+    # 先获取本机地址
+    host_name = socket.gethostname()
+    host = socket.gethostbyname(host_name)
     # 执行命令并获取输出
     result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-    index = result.rfind("WLAN")
-    lan_contents = result[index::].splitlines()
-    lan_contents.pop(0)
-    lan_contents.pop(0)
-    lan_content = []
-    for i in lan_contents:
-        if i != "":
-            lan_content.append(i)
-            lan_content.append("\n")
-        else:
-            break
-    lan_content = "".join(lan_content)
-    ipv4_str = lan_content[lan_content.lower().find("IPv4".lower())::].splitlines()[0]
-    mask_index = lan_content.lower().find("Mask".lower())
-    if mask_index == -1:
-        mask_index = lan_content.lower().find("子网掩码".lower())
-    subnet_mask_str = lan_content[mask_index::].splitlines()[0]
-    gateway_index = lan_content.lower().find("Gateway".lower())
-    if gateway_index == -1:
-        gateway_index = lan_content.lower().find("默认网关".lower())
-    gateway_str = lan_content[gateway_index::]
-    gateway_ip = ip_match(gateway_str)
-    subnet_mask = ip_match(subnet_mask_str)
-    try:
-        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-    except Exception:
-        index = result.rfind("以太网")
-        lan_contents = result[index::].splitlines()
-        lan_contents.pop(0)
-        lan_contents.pop(0)
-        lan_content = []
-        for i in lan_contents:
-            if i != "":
-                lan_content.append(i)
-                lan_content.append("\n")
-            else:
-                break
-        lan_content = "".join(lan_content)
-        ipv4_str = lan_content[lan_content.lower().find("IPv4".lower())::].splitlines()[0]
-        mask_index = lan_content.lower().find("Mask".lower())
-        if mask_index == -1:
-            mask_index = lan_content.lower().find("子网掩码".lower())
-        subnet_mask_str = lan_content[mask_index::].splitlines()[0]
-        gateway_index = lan_content.lower().find("Gateway".lower())
-        if gateway_index == -1:
-            gateway_index = lan_content.lower().find("默认网关".lower())
-        gateway_str = lan_content[gateway_index::]
-        gateway_ip = ip_match(gateway_str)
-        subnet_mask = ip_match(subnet_mask_str)
-        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+    index = result.rfind(host)
+    result = result[index::]
+    index = result.find("Subnet Mask")
+    if index == -1:
+        index = result.find("子网掩码")
+    result = result[index::]
+    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    subnet_mask = re.search(pattern, result).group()
+    index = result.find("Default Gateway")
+    if index == -1:
+        index = result.find("子网掩码")
+    result = result[index::]
+    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    gateway_ip = re.search(pattern, result).group()
+    network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     # 获取可用主机范围
     addresses = list(network.hosts())
     start_ip = list(network.hosts())[0]
@@ -327,7 +296,6 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
             print(total_jindu, end="", flush=True)
             if f.result():
                 list_a, tn, host = f.result()
-                # print(host)
                 screens.append(list_a)
                 tn_list.append(tn)
                 host_list.append(host)
@@ -337,7 +305,7 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
 
     for index, screen in enumerate(screens):
         available_selection.append(str(index + 1))
-        print(f"\n{index + 1}：{screen}\t{host}")
+        print(f"\n{index + 1}：{screen}\t{host_list[index]}")
     while True:
         selection = input(f"请选择你要升级的屏幕，输入0则全部进行升级,多选屏幕请使用空格、分号或逗号进行分隔：")
         if selection == "0":
