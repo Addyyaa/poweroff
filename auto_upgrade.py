@@ -27,10 +27,11 @@ def lan_ip_detect():
     subnet_mask = re.search(pattern, result).group()
     index = result.find("Default Gateway")
     if index == -1:
-        index = result.find("子网掩码")
+        index = result.find("默认网关")
     result = result[index::]
     pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
     gateway_ip = re.search(pattern, result).group()
+    print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
     network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     # 获取可用主机范围
     addresses = list(network.hosts())
