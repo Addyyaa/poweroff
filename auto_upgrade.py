@@ -38,11 +38,12 @@ def lan_ip_detect():
     subnet_mask = ip_match(subnet_mask_str)
     network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     # 获取可用主机范围
+    addresses = list(network.hosts())
     start_ip = list(network.hosts())[0]
     end_ip = list(network.hosts())[-1]
     start_ip = str(start_ip)
     end_ip = str(end_ip)
-    return start_ip, end_ip
+    return start_ip, end_ip, addresses
 
 def ip_match(str):
     pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
@@ -79,17 +80,17 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.write(b"root\n")
             tn.read_until(b"Password: ", timeout=2)
             tn.write(b"ya!2dkwy7-934^\n")
-            tn.read_until(b"login: can't chdir to home directory '/home/root'")
+            tn.read_until(b"login: can't chdir to home directory '/home/root'", timeout=2)
             tn.write(b"cat customer/screenId.ini\n")
             # 循环防止未来得及读取到屏幕id的情况
             while True:
                 time.sleep(0.3)
-                s = tn.read_very_eager()
-                index = s.rfind(b"PS")
-                if index != -1:
+                s = tn.read_very_eager().decode("utf-8")
+                pattern = r"deviceId=\s*(\w+)"
+                match = re.search(pattern, s).group(1)
+                if match:
+                    screen = match
                     break
-            result = s[index::].decode("utf-8")
-            screen = [result.splitlines()[0]]
             return [screen, tn, host]
         else:
             tn.close()
@@ -109,7 +110,9 @@ def int_to_ip(ip_int):
 
 
 def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, version: str, update_firmware: str):
-    """:return 201 表示获取屏幕配置超时"""
+    """:return 201 表示获取屏幕配置超时
+        :lcd_type 3表示没有sd卡的10.1 4表示没有有sd卡的13.3，5表示有sd卡的10.1 6表示有sd卡的13.3
+    """
     # 对选择的屏幕进行操作
     tn_list[i].write(b"cat /customer/config.ini | grep lcd_type && echo ok\n")
     ok = tn_list[i].read_until(b"0", timeout=2).decode("utf-8")
@@ -132,17 +135,17 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
         display_type = result[index + 1:index + 2:1]
         logging.info(f"version:{version}")
         if version == "1":
-            if display_type == "3":
+            if display_type == "5":
                 file_path = os.path.join(resource_path, 'ota_packet/China/10.1/SStarOta.bin.gz')
-            elif display_type == "4":
+            elif display_type == "6":
                 file_path = os.path.join(resource_path, 'ota_packet/China/13.3/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
         elif version == "2":
-            if display_type == "3":
+            if display_type == "5":
                 file_path = os.path.join(resource_path, 'ota_packet/USA/10.1/SStarOta.bin.gz')
-            elif display_type == "4":
+            elif display_type == "6":
                 file_path = os.path.join(resource_path, 'ota_packet/USA/13.3/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
@@ -275,7 +278,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
 
 
 
-def scan_ip_range(start_ip, end_ip, port):
+def scan_ip_range(start_ip, end_ip, port, addresses):
     # 将起始IP地址和结束IP地址转换为整数形式
     start = ip_to_int(start_ip)
     end = ip_to_int(end_ip)
@@ -287,19 +290,19 @@ def scan_ip_range(start_ip, end_ip, port):
     upgrade_screens = []
     # 使用线程池
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = [executor.submit(scan_port, int_to_ip(ip_int), port) for ip_int in range(start, end + 1)]
+        future = [executor.submit(scan_port, str(ip), port) for ip in addresses]
         completed = 0
         # 等待线程执行完毕
         for f in concurrent.futures.as_completed(future):
             completed += 1
-            dengyu = "=" * (int(completed / (end - start + 1) * 100))
-            kong = " " * (100 - int(completed / (end - start + 1) * 100))
+            dengyu = "=" * (int(completed / (len(addresses)) * 100))
+            kong = " " * (100 - int(completed / (len(addresses)) * 100))
             total_jindu = f"\r正在检索设备：【{dengyu}{kong}】"
             print(total_jindu, end="", flush=True)
             if f.result():
                 list_a, tn, host = f.result()
                 # print(host)
-                screens.extend(list_a)
+                screens.append(list_a)
                 tn_list.append(tn)
                 host_list.append(host)
     if not screens:
@@ -308,7 +311,7 @@ def scan_ip_range(start_ip, end_ip, port):
 
     for index, screen in enumerate(screens):
         available_selection.append(str(index + 1))
-        print(f"\n{index + 1}：{screen}")
+        print(f"\n{index + 1}：{screen}\t{host}")
     while True:
         selection = input(f"请选择你要升级的屏幕，输入0则全部进行升级,多选屏幕请使用空格、分号或逗号进行分隔：")
         if selection == "0":
@@ -387,10 +390,10 @@ def scan_ip_range(start_ip, end_ip, port):
 
 def main():
     # 设置要扫描的IP地址范围和端口号
-    start_ip, end_ip = lan_ip_detect()
+    start_ip, end_ip, addresses = lan_ip_detect()
     port = 23  # Telnet端口号
     # 扫描指定范围内的IP地址的指定端口
-    scan_ip_range(start_ip, end_ip, port)
+    scan_ip_range(start_ip, end_ip, port, addresses)
 
 
 if __name__ == "__main__":
