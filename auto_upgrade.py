@@ -57,15 +57,19 @@ def tel_print(str: bytes):
         return content
 
 def get_latest_print(tn: telnetlib.Telnet):
-    time.sleep(0.5)
-    content = tn.read_very_eager()
-    index1 = content.rfind(b"\r\n")
-    index = content.rfind(b"\r\n", 0, index1)
-    if index != -1:
-        content = content[index + 2:index1:1]
-        return content
-    else:
-        return False
+    times = 0
+    while True:
+        time.sleep(0.5)
+        content = tn.read_very_eager()
+        index1 = content.rfind(b"\r\n")
+        index = content.rfind(b"\r\n", 0, index1)
+        if index != -1:
+            content = content[index + 2:index1:1]
+            return content
+        else:
+            times += 1
+            if times >= 3:
+                return False
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
         tn = telnetlib.Telnet(host, port, timeout=0.5)
@@ -131,18 +135,42 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
         display_type = result[index + 1:index + 2:1]
         logging.info(f"version:{version}")
         if version == "1":
-            if display_type == "5":
-                file_path = os.path.join(resource_path, 'ota_packet/China/10.1/SStarOta.bin.gz')
-            elif display_type == "6":
-                file_path = os.path.join(resource_path, 'ota_packet/China/13.3/SStarOta.bin.gz')
+            # if display_type == "5":
+            #     file_path = os.path.join(resource_path, 'ota_packet/64GB/China/10.1/SStarOta.bin.gz')
+            # elif display_type == "6":
+            #     file_path = os.path.join(resource_path, 'ota_packet/64GB/China/13.3/SStarOta.bin.g')
+            # elif display_type == "1":
+            #     file_path = os.path.join(resource_path, 'ota_packet/China/10.1/SStarOta.bin.gz')
+            # elif display_type == "2":
+            #     file_path = os.path.join(resource_path, 'ota_packet/China/13.3/SStarOta.bin.gz')
+            # elif display_type == "3":
+            #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/China/10.1/SStarOta.bin.gz')
+            # elif display_type == "4":
+            #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/China/13.3/SStarOta.bin.gz')
+            if display_type == "1" or display_type == "3" or display_type == "5":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/10.1/SStarOta.bin.gz')
+            elif display_type == "2" or display_type == "4" or display_type == "6":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/13.3/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
         elif version == "2":
-            if display_type == "5":
-                file_path = os.path.join(resource_path, 'ota_packet/USA/10.1/SStarOta.bin.gz')
-            elif display_type == "6":
-                file_path = os.path.join(resource_path, 'ota_packet/USA/13.3/SStarOta.bin.gz')
+            # if display_type == "5":
+            #     file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/10.1/SStarOta.bin.gz')
+            # elif display_type == "6":
+            #     file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/13.3/SStarOta.bin.gz')
+            # elif display_type == "1":
+            #     file_path = os.path.join(resource_path, 'ota_packet/USA/10.1/SStarOta.bin.gz')
+            # elif display_type == "2":
+            #     file_path = os.path.join(resource_path, 'ota_packet/USA/13.3/SStarOta.bin.gz')
+            # elif display_type == "3":
+            #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/10.1/SStarOta.bin.gz')
+            # elif display_type == "4":
+            #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/13.3/SStarOta.bin.gz')
+            if display_type == "1" or display_type == "3" or display_type == "5":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/10.1/SStarOta.bin.gz')
+            elif display_type == "2" or display_type == "4" or display_type == "6":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/13.3/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
@@ -170,7 +198,12 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             tn_list[i].read_until(b'Killed', timeout=2)
             print(f'{screens[i]}：SStarOta.bin.gz 已成功删除！')
             tn_list[i].write(b"tcpsvd -vE 0.0.0.0 21 ftpd -w / &\n")
-            content = get_latest_print(tn_list[i]).decode("utf-8")
+            content = get_latest_print(tn_list[i])
+            if content:
+                content=content.decode("utf-8")
+            else:
+                print(f"{screens[i]}：ftp服务开启失败，升级失败")
+                return False
         except Exception as e:
             logging.error(f"删除SStarOta.bin.gz时发生错误: {e}")
     else:
@@ -207,7 +240,10 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
     # 关闭ftp
     tn_list[i].write(b"kill -9 $(pidof tcpsvd)\n")
     tn_list[i].write(b" pidof tcpsvd\n")
-    content = get_latest_print(tn_list[i])
+    try:
+        content = get_latest_print(tn_list[i])
+    except Exception as e:
+        logging.error(e)
     if not content:
         print(f"{screens[i]}未成功关闭ftp服务")
         return False
@@ -217,21 +253,30 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
         pass
     else:
         print(f"{screens[i]}未成功关闭ftp服务")
+
     tn_list[i].write(b"\n")
     # 检查文件是否成功传入
     tn_list[i].write(b"find /upgrade/ -maxdepth 1 -name SStarOta.bin.gz \n")
-    content = get_latest_print(tn_list[i])
+    try:
+        content = get_latest_print(tn_list[i])
+    except Exception as e:
+        logging.error(e)
     if not content:
         print(f"{screens[i]}上传固件验证失败")
         return False
     else:
         content = content.decode("utf-8")
+
+
     if "SStarOta.bin.gz" in content:
         if update_firmware == '1':
             tn_list[i].write(b"rm /upgrade/restore/SStarOta.bin.gz\n")
             tn_list[i].read_very_eager()
             tn_list[i].write(b"rm /upgrade/restore/SStarOta.bin.gz\n")
-            content = get_latest_print(tn_list[i])
+            try:
+                content = get_latest_print(tn_list[i])
+            except Exception as e:
+                logging.error(e)
             if not content:
                 print(f"{screens[i]}未能删除原工厂内置固件")
                 return False
@@ -243,7 +288,10 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
                     tn_list[i].write(b"cp /upgrade/SStarOta.bin.gz /upgrade/restore/ && date\n ")
                     tn_list[i].read_until(b"UTC", timeout=10)
                     tn_list[i].write(b"cd /upgrade/restore/ && ls\n")
-                    content = get_latest_print(tn_list[i])
+                    try:
+                        content = get_latest_print(tn_list[i])
+                    except Exception as e:
+                        logging.error(e)
                     if content is not False:
                         content = content.decode('utf-8')
                         if "SStarOta.bin.gz" in content:
@@ -352,7 +400,8 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
 
     # 使用线程池升级操作
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(upgrade, i, tn_list, screens, host_list, version, update_firmware) for i in upgrade_list]
+        futures = [executor.submit(
+            upgrade, i, tn_list, screens, host_list, version, update_firmware) for i in upgrade_list]
         # 获取升级的状态码
         completed = 0
         for f in concurrent.futures.as_completed(futures):
@@ -367,14 +416,55 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
                 if code == 201:
                     print(f"{screens[indx]}未能获取配置，升级失败")
         success_list = []
+        fail_list = []
+        fail_list_screen = []
         for f in futures:
             screen = f.result()
             if screen:
                 print(f"\n\033[92m{screen}\033[0m升级完成", end="")
                 success_list.append(screen)
-        for screen in upgrade_screens:
+        for index, screen in enumerate(upgrade_screens):
             if screen not in success_list:
                 print(f"\033[91m{screen}\033[0m升级失败")
+                index = screens.index(screen)
+                fail_list.append(index)
+                fail_list_screen.append(screen)
+        if fail_list:
+            count = 1
+            while True:
+                count += 1
+                futures = [executor.submit(upgrade, i, tn_list, screens, host_list, version, update_firmware) for i in fail_list]
+                # 获取升级的状态码
+                completed = 0
+                for f in concurrent.futures.as_completed(futures):
+                    # 进度条动画
+                    completed += 1
+                    dengyu = "=" * (int(completed / len(futures) * 100))
+                    kong = " " * (100 - int(completed / len(futures) * 100))
+                    total_jindu = f"\r正在升级设备：【{dengyu}{kong}】"
+                    print(total_jindu, end="", flush=True)
+                    if isinstance(f.result(), tuple):
+                        indx, code = f.result()
+                        if code == 201:
+                            print(f"{screens[indx]}未能获取配置，升级失败")
+                for f in futures:
+                    screen = f.result()
+                    if screen:
+                        print(f"\n\033[92m{screen}\033[0m升级完成", end="")
+                        success_list.append(screen)
+                        fail_list_screen.remove(screen)
+                for index, screen in enumerate(fail_list_screen):
+                    print(f"screen_list：{screen}，fail_list：{fail_list}")
+                    if screen not in success_list:
+                        print(f"\033[91m{screen}\033[0m第{count}次升级失败")
+                if not fail_list_screen:
+                    break
+                else:
+                    print(f"还有{len(fail_list_screen)}台设备未升级成功：{fail_list_screen}")
+                if count >= 3:
+                    ct = input("是否继续升级（y/n）")
+                    if ct.upper() == "N":
+                        break
 
         concurrent.futures.wait(futures)
         all_status = all(f.done() for f in futures)
@@ -382,6 +472,7 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
             input("\n升级完成，请按回车键退出程序")
         else:
             input("存在设备升级失败，请检查")
+
 
 def main():
     # 设置要扫描的IP地址范围和端口号

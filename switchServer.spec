@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['telenet3.py'],
+    ['switchSever.py'],
     pathex=['C:/Users/Administrator/PycharmProjects/poweroff'],
     binaries=[],
-    datas=[('C:/Users/Administrator/PycharmProjects/poweroff/resource', 'resource')],
+    datas=[('resource', 'resource')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
