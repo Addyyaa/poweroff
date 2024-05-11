@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="Update auto_upgrade.py&#10;&#10;修复默认网关查找词">
-      <changelist_data name="Addyyaa" email="98109920+addyyaa@users.noreply.github.com" />
-      <change afterPath="$PROJECT_DIR$/resource/ota_packet/64GB/China/10.1/SStarOta.bin.gz" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resource/ota_packet/64GB/China/13.3/SStarOta.bin.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/poweroff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/poweroff.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auto_upgrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/auto_upgrade.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,28 +54,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.auto_upgrade.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.telenet3.executor": "Run",
-    "Python.tmp.executor": "Run",
-    "Python.tmp2.executor": "Run",
-    "Python.upgrade.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/PythonProject/poweroff/resource/ota_packet/VideoVersion",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.auto_upgrade.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.telenet3.executor&quot;: &quot;Run&quot;,
+    &quot;Python.tmp.executor&quot;: &quot;Run&quot;,
+    &quot;Python.tmp2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.upgrade.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/PythonProject/poweroff/resource/ota_packet/VideoVersion&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\PythonProject\poweroff\resource\ota_packet\VideoVersion" />
@@ -267,7 +261,7 @@
       <workItem from="1710331548712" duration="300000" />
       <workItem from="1714486558714" duration="1580000" />
       <workItem from="1715337841505" duration="349000" />
-      <workItem from="1715338214179" duration="6924000" />
+      <workItem from="1715338214179" duration="7412000" />
     </task>
     <task id="LOCAL-00001" summary="增加海外测试环境">
       <option name="closed" value="true" />
@@ -315,7 +309,15 @@
       <option name="project" value="LOCAL" />
       <updated>1710233958245</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Update auto_upgrade.py&#10;&#10;修复默认网关查找词">
+      <option name="closed" value="true" />
+      <created>1715345327981</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1715345327981</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
