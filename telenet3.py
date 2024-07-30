@@ -53,7 +53,15 @@ def ftp_upload(host, port=21, user_name="", password=''):
     while True:
         choice = input("请选择服务器：\n1.中国-测试\n2.美国-测试\n3.中国-正式\n4.美国-正式\n请选择: ")
         if choice == '1':
-            file_path = Chinese_file_path
+            config['mqtt']['en_host'] = '139.224.192.36'
+            config['mqtt']['cn_host'] = '139.224.192.36'
+            config['mqtt']['en_port'] = '1883'
+            config['mqtt']['cn_port'] = '1883'
+            with open(ini_path, 'w') as configfile:
+                config.write(configfile)
+            file_path = American_file_path
+            paths[file_path] = remote_file_path
+            paths[ini_path] = remote_file_path_ini
             break
         elif choice == '2':
             config['mqtt']['en_host'] = '18.215.241.226'
@@ -100,7 +108,7 @@ def ftp_upload(host, port=21, user_name="", password=''):
         if "230" in response and "220" in welcome_message:
             logging.info("FTP登录成功！")
             try:
-                if choice == '1':
+                if choice == '8888':
                     with open(file_path, 'rb') as file:
                         ftp.storbinary(f"STOR {remote_file_path}", file)
                 else:
