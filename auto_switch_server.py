@@ -11,6 +11,7 @@ import os
 import configparser
 from typing import Union
 import concurrent.futures
+import netifaces
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
@@ -67,23 +68,17 @@ def lan_ip_detect():
         gateway_ip = re.search(pattern, result).group()
         print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
     elif os_type == "posix":
-        # 执行命令并获取输出
-        result = subprocess.run(["ifconfig"], capture_output=True, text=True).stdout
-        index = result.rfind(host)
-        result = result[index::]
-        index = result.find("netmask")
-        if index == -1:
-            index = result.find("netmask")
-        result = result[index::]
-        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}" # TODO iOS这里是十六进制，需要更换匹配模式
-        subnet_mask = re.search(pattern, result).group()
-        index = result.find("gateway")
-        if index == -1:
-            index = result.find("gateway")
-        result = result[index::]
-        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-        gateway_ip = re.search(pattern, result).group()
-        print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
+        interfaces = netifaces.interfaces()
+        # 遍历所有网络接口
+        addr_info = None
+        for interface in interfaces:
+            if interface == "en0":
+                addr_info = netifaces.ifaddresses(interface)
+                break
+        if addr_info and netifaces.AF_INET in addr_info:
+            address = addr_info[netifaces.AF_INET][0]
+            subnet_mask = address.get("netmask")
+            gateway_ip = netifaces.gateways()['default'][netifaces.AF_INET][0]
     network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     # 获取可用主机范围
     addresses = list(network.hosts())
