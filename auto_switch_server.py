@@ -68,17 +68,32 @@ def lan_ip_detect():
         gateway_ip = re.search(pattern, result).group()
         print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
     elif os_type == "posix":
+        print("识别为 mac")
         interfaces = netifaces.interfaces()
         # 遍历所有网络接口
         addr_info = None
+        local_ips = []
+        subnet_mask = []
         for interface in interfaces:
-            if interface == "en0":
-                addr_info = netifaces.ifaddresses(interface)
-                break
-        if addr_info and netifaces.AF_INET in addr_info:
-            address = addr_info[netifaces.AF_INET][0]
-            subnet_mask = address.get("netmask")
+            ifaddresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in ifaddresses:
+                for link in ifaddresses[netifaces.AF_INET]:
+                    ip = link['addr']
+                    if not ip.startswith("127.") and not ip.startswith("169.254"):
+                        addresses = netifaces.ifaddresses(interface)
+                        for i in addresses.values():
+                           for j in i:
+                               if 'netmask' in j:
+                                if j['netmask'].startswith("255."):
+                                    local_ips.append(j['addr'])
+                                    subnet_mask.append(j['netmask'])
+        if len(local_ips) == 1 and len(subnet_mask) == 1:
             gateway_ip = netifaces.gateways()['default'][netifaces.AF_INET][0]
+            subnet_mask = subnet_mask[0]
+            print(f'subnet_mask={subnet_mask}, gateway_ip={gateway_ip}')
+        else:
+            input(f'未能获取到 ip 地址==>local_ips:{local_ips}, sub_mask:{subnet_mask}')
+            sys.exit()
     try:
         network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
     except Exception as e:
