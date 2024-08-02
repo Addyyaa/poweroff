@@ -12,7 +12,6 @@ import configparser
 from typing import Union
 import concurrent.futures
 import netifaces
-import psutil
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
@@ -46,31 +45,44 @@ def get_latest_print(tn: telnetlib.Telnet):
 
 
 def lan_ip_detect():
-    gateways = netifaces.gateways()
-    gateway = gateways['default'][2][0]
-    addresses = []
-    # 获取网络接口状态
-    stats = psutil.net_if_stats()
-    # 获取所有网络接口地址信息
-    for interface, addrs in psutil.net_if_addrs().items():
-        # 检查接口是否是活动的
-        if interface in stats and stats[interface].isup:
-            for addr in addrs:
-                if addr.family == socket.AF_INET:
-                    addresses.append({f'{interface}': addr.address, 'netmask': addr.netmask})
-    ipv4 = addresses
-    address = ''
-    for i in ipv4:
-        if "wlan" in str(i.keys()).lower() or 'eth' in str(i.keys()).lower() or '本地连接' in i.keys() or 'lan' in str(
-                i.keys()).lower():
-            address = i
-            break
-        else:
-            address = ipv4[0]
-            break
-    address = dict(address)
-    network = list(ipaddress.IPv4Network(f"{gateway}/{address['netmask']}", strict=False).hosts())
-    return network
+    os_type = os.name
+    # 先获取本机地址
+    host_name = socket.gethostname()
+    host = socket.gethostbyname(host_name)
+    if os_type == "nt":
+        # 执行命令并获取输出
+        result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
+        index = result.rfind(host)
+        result = result[index::]
+        index = result.find("Subnet Mask")
+        if index == -1:
+            index = result.find("子网掩码")
+        result = result[index::]
+        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        subnet_mask = re.search(pattern, result).group()
+        index = result.find("Default Gateway")
+        if index == -1:
+            index = result.find("默认网关")
+        result = result[index::]
+        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        gateway_ip = re.search(pattern, result).group()
+        print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
+    elif os_type == "posix":
+        interfaces = netifaces.interfaces()
+        # 遍历所有网络接口
+        addr_info = None
+        for interface in interfaces:
+            if interface == "en0":
+                addr_info = netifaces.ifaddresses(interface)
+                break
+        if addr_info and netifaces.AF_INET in addr_info:
+            address = addr_info[netifaces.AF_INET][0]
+            subnet_mask = address.get("netmask")
+            gateway_ip = netifaces.gateways()['default'][netifaces.AF_INET][0]
+    network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+    # 获取可用主机范围
+    addresses = list(network.hosts())
+    return addresses
 
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
@@ -119,7 +131,7 @@ def modify_location(screen: str, tn: telnetlib.Telnet, host: str, version: str):
                 result = get_latest_print(tn)
                 if result:
                     if b'cn_host=cloud-service.austinelec.com' in result:
-                        print(f"设备：{host} \t{screen}服务地址已更改")
+                        print(f"设备：{host} 服务地址已更改")
                         break
                     else:
                         print(f"设备：{host} 服务地址更改失败")
@@ -224,9 +236,8 @@ def modify_location(screen: str, tn: telnetlib.Telnet, host: str, version: str):
         else:
             input("选项错误")
             sys.exit()
-    print(f"设备：{host} 切换成功,建议重启屏幕")
+    print(f"设备：{host} 切换成功,屏幕即将重启")
     tn.write(b"kill $(pidof mymqtt) &\n")
-
 
 def cmd_check(tn: telnetlib.Telnet, cmd: list, text: str):
     times1 = 0
@@ -245,7 +256,6 @@ def cmd_check(tn: telnetlib.Telnet, cmd: list, text: str):
                 times1 += 1
                 continue
 
-
 def modify_server(screen: str, tn: telnetlib.Telnet, host: str, option: str):
     if option == "1":
         # tn.write(b"echo [mqtt] >  /software/mqtt.ini \n")
@@ -254,14 +264,10 @@ def modify_server(screen: str, tn: telnetlib.Telnet, host: str, option: str):
         # tn.write(b'echo en_host=cloud-service.austinelec.com >>  /software/mqtt.ini \n')
         # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
         # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=cloud-service.austinelec.com >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini',
-               'echo en_host=cloud-service.austinelec.com >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync',
-               'cat /software/mqtt.ini | grep cloud-service.austinelec.com']
+        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=cloud-service.austinelec.com >>  /software/mqtt.ini', 'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=cloud-service.austinelec.com >>  /software/mqtt.ini', 'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep cloud-service.austinelec.com']
         result = cmd_check(tn, cmd, "cloud-service.austinelec.com")
         if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
+            print(f"设备：{host} 服务地址已更改")
         else:
             input(f"设备：{host} 服务地址更改失败，按回车退出程序")
             sys.exit()
@@ -272,15 +278,10 @@ def modify_server(screen: str, tn: telnetlib.Telnet, host: str, option: str):
         # tn.write(b'echo en_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini \n')
         # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
         # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ',
-               'echo cn_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini',
-               'echo en_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync',
-               'cat /software/mqtt.ini | grep cloud-service-us.austinelec.com']
+        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=cloud-service-us.austinelec.com >>  /upgrade/mqtt.ini', 'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=cloud-service-us.austinelec.com >>  /upgrade/mqtt.ini', 'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep cloud-service-us.austinelec.com']
         result = cmd_check(tn, cmd, "cloud-service-us.austinelec.com")
         if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
+            print(f"设备：{host} 服务地址已更改")
         else:
             input(f"设备：{host} 服务地址更改失败，按回车退出程序")
             sys.exit()
@@ -291,12 +292,10 @@ def modify_server(screen: str, tn: telnetlib.Telnet, host: str, option: str):
         # tn.write(b'echo en_host=139.224.192.36 >>  /software/mqtt.ini \n')
         # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
         # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=139.224.192.36 >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=139.224.192.36 >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep 139.224.192.36']
+        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=139.224.192.36 >>  /software/mqtt.ini', 'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=139.224.192.36 >>  /software/mqtt.ini', 'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep 139.224.192.36']
         result = cmd_check(tn, cmd, "139.224.192.36")
         if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
+            print(f"设备：{host} 服务地址已更改")
         else:
             input(f"设备：{host} 服务地址更改失败，按回车退出程序")
             sys.exit()
@@ -307,19 +306,15 @@ def modify_server(screen: str, tn: telnetlib.Telnet, host: str, option: str):
         # tn.write(b'echo en_host=18.215.241.226 >>  /software/mqtt.ini \n')
         # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
         # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=18.215.241.226 >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=18.215.241.226 >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep 18.215.241.226']
+        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=18.215.241.226 >>  /software/mqtt.ini', 'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=18.215.241.226 >>  /software/mqtt.ini', 'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep 18.215.241.226']
         result = cmd_check(tn, cmd, "18.215.241.226")
         if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
+            print(f"设备：{host} 服务地址已更改")
         else:
             input(f"设备：{host} 服务地址更改失败，按回车退出程序")
             sys.exit()
     else:
         input("选项错误")
-    print(f"设备：{host}\t{screen} 切换成功,建议重启屏幕")
-    tn.write(b"kill $(pidof mymqtt) &\n")
 
 
 addresses = lan_ip_detect()
@@ -343,9 +338,7 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
             tn_list.append(tn)
             host_list.append(host)
     try:
-        print(f"\n发现以下屏幕：")
-        for index, (item_a, item_b) in enumerate(zip(screen_list, host_list)):
-            print(f"{index + 1}. {item_a}：\t{item_b}")
+        print(f"\n发现以下屏幕\n屏幕ID：{screen}")
     except Exception as e:
         input(f"未发现屏幕,按回车退出程序")
         sys.exit()
@@ -353,31 +346,6 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
     if not screen_list:
         input("\n未发现设备，按回车键退出程序")
         sys.exit()
-    # 选择操作的屏幕
-    operate_screen = []
-    operate_tn = []
-    operate_host = []
-    while True:
-        continue_to_circle = False
-        option = input('\n请选择要操作的屏幕，直接输入序号，可以以英文“,”、“;”和空格分割，0则为全部：\n')
-        option = re.split(r'[ ,;]+', option.strip())
-        if len(option) == 1 and option[0] == "0":
-            operate_screen = screen_list
-            operate_tn = tn_list
-            operate_host = host_list
-            break
-        for i in option:
-            if i not in [str(j) for j in range(1, len(screen_list) + 1)]:
-                print("选项错误，请重新输入")
-                continue_to_circle = True
-                break
-        if continue_to_circle:
-            continue
-        for i in option:
-            operate_screen.append(screen_list[int(i) - 1])
-            operate_tn.append(tn_list[int(i) - 1])
-            operate_host.append(host_list[int(i) - 1])
-        break
 
     while True:
         option = input('请选择操作：\n1. 切换服务地址\n2. 切换版本\n请选择: ')
@@ -397,9 +365,6 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
             else:
                 break
         modify_server(screen, tn, host, server)
-        future = [executor.submit(modify_server, screen, tn, host, server) for screen, tn, host in
-                  zip(operate_screen, operate_tn, operate_host)]
-        concurrent.futures.wait(future)
         while True:
             continue_opterate = input('是否要进行版本切换？\n1. 是\n2. 否\n请选择: ')
             if continue_opterate not in ["1", "2"]:
@@ -418,7 +383,6 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
             continue
         else:
             break
-    future = [executor.submit(modify_location, screen, tn, host, version) for screen, tn, host in
-              zip(operate_screen, operate_tn, operate_host)]
+    future = [executor.submit(modify_location, screen, tn, host, version) for screen, tn, host in zip(screen_list, tn_list, host_list)]
     concurrent.futures.wait(future)
     input("切换完成!!!按回车键退出程序")
