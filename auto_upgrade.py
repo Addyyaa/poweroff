@@ -155,7 +155,10 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             elif display_type == "2" or display_type == "4" or display_type == "6":
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/China/13.3/SStarOta.bin.gz')
             elif display_type == "7":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/800-1280/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/800-1280/SStarOta.bin.gz')  # 7 群创屏 ，
+                # 8为BOE屏
+            elif display_type == "8":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/800-1280-BOE/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
@@ -176,6 +179,10 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/10.1/SStarOta.bin.gz')
             elif display_type == "2" or display_type == "4" or display_type == "6":
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/13.3/SStarOta.bin.gz')
+            elif display_type == "7":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/800-1280/SStarOta.bin.gz')
+            elif display_type == "8":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/800-1280-BOE/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
