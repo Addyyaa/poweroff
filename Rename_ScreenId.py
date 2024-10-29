@@ -101,6 +101,7 @@ def lan_ip_detect():
 
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
+    screen = None
     try:
         tn = telnetlib.Telnet(host, port, timeout=0.5)
         s = tn.read_until(b"login: ", timeout=0.5)
@@ -119,15 +120,22 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
                     break
                 time.sleep(0.3)
                 s = tn.read_very_eager().decode("utf-8")
-                pattern = r"deviceId=\s*(\s+)"
+                pattern = r'deviceId=\s*(\s+)'
                 match = re.search(pattern, s)
-                print(match)
+                tn.write(b"if [ $(wc -l < /customer/screenId.ini) -lt 2 ]; then echo $(ls /);fi\n")
+                tn.read_until(b'appconfigs', timeout=0.5)
+                pt = tn.read_very_eager().decode("utf-8")
                 if match:
+                    print("条件满足")
                     screen = match.group(0)
                     break
-            return [screen, tn, host]
+                elif 'upgrade' in pt:
+                    screen = ""
+                    break
         else:
             tn.close()
+        if screen is not None:
+            return [screen, tn, host]
     except Exception:
         return False
 
@@ -169,6 +177,7 @@ def rename_screenId(tn):
         s = j.read_very_eager().decode("utf-8")
         if "0" in s:
             print(f"已写入设备{k}, ip: {f}")
+            j.write(b"sync && /software/restart_bluetooth.sh\n")
         j.close()
 
 
@@ -187,8 +196,13 @@ def main():
             if result:
                 screen_info.append({"Screen": result[0], "Telnet": result[1], "IP": result[2]})
     print(screen_info)
+    if str(len(screen_info)) == "0":
+        input("未发现设备")
+        sys.exit()
     print("共检测到" + str(len(screen_info)) + "个设备")
     rename_screenId(screen_info)
+    input("所有屏幕id均已写入完成，按回车键退出")
+
 
 
 if __name__ == '__main__':

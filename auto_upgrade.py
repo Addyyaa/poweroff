@@ -12,34 +12,48 @@ import ipaddress
 import socket
 
 def lan_ip_detect():
-    # 先获取本机地址
-    host_name = socket.gethostname()
-    host = socket.gethostbyname(host_name)
-    # 执行命令并获取输出
-    result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-    index = result.rfind(host)
-    result = result[index::]
-    index = result.find("Subnet Mask")
-    if index == -1:
-        index = result.find("子网掩码")
-    result = result[index::]
-    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    # subnet_mask = re.search(pattern, result).group()
-    index = result.find("Default Gateway")
-    subnet_mask = '255.255.255.0'
-    if index == -1:
-        index = result.find("默认网关")
-    result = result[index::]
-    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    gateway_ip = re.search(pattern, result).group()
-    print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
-    network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-    # 获取可用主机范围
-    addresses = list(network.hosts())
-    start_ip = list(network.hosts())[0]
-    end_ip = list(network.hosts())[-1]
-    start_ip = str(start_ip)
-    end_ip = str(end_ip)
+    try:
+        # 先获取本机地址
+        host_name = socket.gethostname()
+        host = socket.gethostbyname(host_name)
+        # 执行命令并获取输出
+        result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
+        index = result.rfind(host)
+        result = result[index::]
+        index = result.find("Subnet Mask")
+        if index == -1:
+            index = result.find("子网掩码")
+        result = result[index::]
+        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        subnet_mask = re.search(pattern, result).group()
+        index = result.find("Default Gateway")
+        if index == -1:
+            index = result.find("默认网关")
+        result = result[index::]
+        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        gateway_ip = re.search(pattern, result).group()
+        print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
+        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+        # 获取可用主机范围
+        addresses = list(network.hosts())
+        start_ip = list(network.hosts())[0]
+        end_ip = list(network.hosts())[-1]
+        start_ip = str(start_ip)
+        end_ip = str(end_ip)
+    except Exception:
+        while True:
+            try:
+                gateway_ip = input("请输入正确的网关地址：")
+                ipaddress.IPv4Network(gateway_ip)
+                break
+            except ipaddress.AddressValueError:
+                print("请输入正确的网关地址")
+        subnet_mask = "255.255.255.0"
+        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+        # 获取可用主机范围
+        addresses = [str(ip) for ip in network.hosts()]
+        start_ip = addresses[0]
+        end_ip = addresses[-1]
     return start_ip, end_ip, addresses
 
 def ip_match(str):
@@ -84,6 +98,8 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.write(b"ya!2dkwy7-934^\n")
             tn.read_until(b"login: can't chdir to home directory '/home/root'", timeout=2)
             tn.write(b"cat customer/screenId.ini\n")
+            # 没有屏幕id可以打开
+            print(host)
             # 循环防止未来得及读取到屏幕id的情况
             while True:
                 time.sleep(0.3)
@@ -109,6 +125,7 @@ def ip_to_int(ip):
 def int_to_ip(ip_int):
     # 将整数形式的IP地址转换为字符串形式
     return '.'.join(str((ip_int >> (8 * i)) & 255) for i in range(3, -1, -1))
+
 
 
 def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, version: str, update_firmware: str):
@@ -138,7 +155,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
         display_type = result[index + 1:index + 2:1]
         logging.info(f"version:{version}")
         if version == "1":
-            # if display_type == "5":
+            # if display_type == "5":.
             #     file_path = os.path.join(resource_path, 'ota_packet/64GB/China/10.1/SStarOta.bin.gz')
             # elif display_type == "6":
             #     file_path = os.path.join(resource_path, 'ota_packet/64GB/China/13.3/SStarOta.bin.g')
@@ -174,6 +191,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             # elif display_type == "3":
             #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/10.1/SStarOta.bin.gz')
             # elif display_type == "4":
+
             #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/13.3/SStarOta.bin.gz')
             if display_type == "1" or display_type == "3" or display_type == "5":
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/10.1/SStarOta.bin.gz')
