@@ -1,3 +1,4 @@
 build/**/*.pkg filter=lfs diff=lfs merge=lfs -text
 dist/**/*.exe filter=lfs diff=lfs merge=lfs -text
-resource filter=lfs diff=lfs merge=lfs -text
+resource/**/*.bin filter=lfs diff=lfs merge=lfs -text
+resource/**/*.gz filter=lfs diff=lfs merge=lfs -text
