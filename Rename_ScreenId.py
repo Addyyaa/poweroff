@@ -181,11 +181,6 @@ def rename_screenId(tn):
         j.close()
 
 
-
-
-
-
-
 def main():
     screen_info = []
     addresses = lan_ip_detect()
@@ -202,7 +197,6 @@ def main():
     print("共检测到" + str(len(screen_info)) + "个设备")
     rename_screenId(screen_info)
     input("所有屏幕id均已写入完成，按回车键退出")
-
 
 
 if __name__ == '__main__':
