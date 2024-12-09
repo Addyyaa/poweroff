@@ -219,10 +219,10 @@ def main():
         if result:
             with open("screenId.ini", "w") as f:
                 for i in screens:
-                    f.write("deviceId=\t" + i + "\n")
+                    f.write(i + "\n")
             break
         time.sleep(1)
-    print("共检测到" + str(len(screen_info)) + f"个设备: {screen_info}")
+    print("共检测到" + str(len(screen_info)) + f"个设备: {[{i['Screen']: i['IP']} for i in screen_info]}")
     while True:
         option = input("请开始烧录，烧录完后输入Y回车继续")
         try:
@@ -248,6 +248,15 @@ def main():
         if "0" in s:
             print(f"已写入设备{screen_id}")
             tn.write(b"sync && /software/restart_bluetooth.sh\n")
+            # 删除本地文件中的屏幕id
+            with open("screenId.ini", "r", encoding='utf-8') as f:
+                lines = [i.replace("\n", "") for i in (f.readlines())]
+            for i in lines:
+                if screen_id in i:
+                    lines.remove(i)
+            with open("screenId.ini", "w") as f:
+                for i in lines:
+                    f.write(i + "\n")
 
     input("所有屏幕id均已写入完成，按回车键退出")
 
