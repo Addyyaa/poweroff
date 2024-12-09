@@ -194,71 +194,76 @@ def the_second_detect_devices_thread(addresses, screen_info, screens, device_num
 
 
 def main():
-    while True:
-        ssid = get_current_wifi_ssid()
-        if "xiaomi" not in ssid:
-            print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
-            time.sleep(3)
-            continue
-        else:
-            break
-    print("已连接WiFi：【xiaomi】")
-    while True:
-        try:
-            device_num = int(input("请输入需要扫描的设备数量:"))
-            break
-        except Exception:
-            print("输入有误，请重新输入")
-    screen_info = []
-    screens = []
-    tns_ids = []
-    addresses = lan_ip_detect()
-    addresses = [str(ip) for ip in addresses]
-    while True:
-        result = detect_devices_thread(addresses, screen_info, screens, device_num)
-        if result:
-            with open("screenId.ini", "w") as f:
-                for i in screens:
-                    f.write(i + "\n")
-            break
-        time.sleep(1)
-    print("共检测到" + str(len(screen_info)) + f"个设备: {[{i['Screen']: i['IP']} for i in screen_info]}")
-    while True:
-        option = input("请开始烧录，烧录完后输入Y回车继续")
-        try:
-            if option.upper() == "Y":
+    try:
+        with open("screenId.ini", "r", encoding='utf-8') as f:
+            lines = [i.replace("\n", "") for i in (f.readlines())]
+        while True:
+            ssid = get_current_wifi_ssid()
+            if "xiaomi" not in ssid:
+                print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
+                time.sleep(3)
+                continue
+            else:
                 break
-        except Exception:
-            continue
-    while True:
-        result = the_second_detect_devices_thread(addresses, screen_info, screens, device_num, tns_ids)
-        if result:
-            break
-        time.sleep(1)
-    # 遍历 screens 将其中的id 写入到空id屏幕中
-    print("id库：", screens)
-    for screen_id, tn in zip(screens, tns_ids):
-        screen_id = screen_id.split("=", 1)[1].strip()
-        tn.write(b"echo '' > /customer/screenId.ini\n")
-        tn.write(b"echo [screen] > /customer/screenId.ini\n")
-        tn.write(b"echo deviceId=" + screen_id.encode('utf-8') + b" >> /customer/screenId.ini&& echo $?\n")
-        tn.read_until(b"0", timeout=2)
-        time.sleep(0.3)
-        s = tn.read_very_eager().decode("utf-8")
-        if "0" in s:
-            print(f"已写入设备{screen_id}")
-            tn.write(b"sync && /software/restart_bluetooth.sh\n")
-            # 删除本地文件中的屏幕id
-            with open("screenId.ini", "r", encoding='utf-8') as f:
-                lines = [i.replace("\n", "") for i in (f.readlines())]
-            for i in lines:
-                if screen_id in i:
-                    lines.remove(i)
-            with open("screenId.ini", "w") as f:
+        print("已连接WiFi：【xiaomi】")
+        while True:
+            try:
+                device_num = int(input("请输入需要扫描的设备数量:"))
+                break
+            except Exception:
+                print("输入有误，请重新输入")
+        screen_info = []
+        screens = []
+        tns_ids = []
+        addresses = lan_ip_detect()
+        addresses = [str(ip) for ip in addresses]
+        while True:
+            result = detect_devices_thread(addresses, screen_info, screens, device_num)
+            if result:
+                with open("screenId.ini", "w") as f:
+                    for i in screens:
+                        f.write(i + "\n")
+                break
+            time.sleep(1)
+        print("共检测到" + str(len(screen_info)) + f"个设备: {[{i['Screen']: i['IP']} for i in screen_info]}")
+        while True:
+            option = input("请开始烧录，烧录完后输入Y回车继续")
+            try:
+                if option.upper() == "Y":
+                    break
+            except Exception:
+                continue
+        while True:
+            result = the_second_detect_devices_thread(addresses, screen_info, screens, device_num, tns_ids)
+            if result:
+                break
+            time.sleep(1)
+        # 遍历 screens 将其中的id 写入到空id屏幕中
+        print("id库：", screens)
+        for screen_id, tn in zip(screens, tns_ids):
+            screen_id = screen_id.split("=", 1)[1].strip()
+            tn.write(b"echo '' > /customer/screenId.ini\n")
+            tn.write(b"echo [screen] > /customer/screenId.ini\n")
+            tn.write(b"echo deviceId=" + screen_id.encode('utf-8') + b" >> /customer/screenId.ini&& echo $?\n")
+            tn.read_until(b"0", timeout=2)
+            time.sleep(0.3)
+            s = tn.read_very_eager().decode("utf-8")
+            if "0" in s:
+                print(f"已写入设备{screen_id}")
+                tn.write(b"sync && /software/restart_bluetooth.sh\n")
+                # 删除本地文件中的屏幕id
                 for i in lines:
-                    f.write(i + "\n")
+                    if screen_id in i:
+                        lines.remove(i)
+        with open("screenId.ini", "w") as f:
+            for i in lines:
+                f.write(i + "\n")
 
-    input("所有屏幕id均已写入完成，按回车键退出")
+        input("所有屏幕id均已写入完成，按回车键退出")
+    except KeyboardInterrupt:
+        with open("screenId.ini", "w") as f:
+            for i in lines:
+                f.write(i + "\n")
 
 
 if __name__ == '__main__':
