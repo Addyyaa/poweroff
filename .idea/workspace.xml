@@ -7,11 +7,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="增加 auto_write_screenid.py 脚本，支持烧录完后自动写入屏幕之前的id。智能检测干扰设备，智能检测网络环境是否满足">
+    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="优化了自动写id 逻辑，增加本地id存储和校验">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/auto_write_screenid.py" beforeDir="false" afterPath="$PROJECT_DIR$/auto_write_screenid.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/screenId.ini" beforeDir="false" afterPath="$PROJECT_DIR$/screenId.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tmp2.py" beforeDir="false" afterPath="$PROJECT_DIR$/tmp2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -371,7 +370,10 @@
       <workItem from="1732511803519" duration="311000" />
       <workItem from="1733472043999" duration="6373000" />
       <workItem from="1733480947724" duration="11419000" />
-      <workItem from="1733704718545" duration="7883000" />
+      <workItem from="1733704718545" duration="9816000" />
+      <workItem from="1733732400524" duration="1282000" />
+      <workItem from="1733793504253" duration="1639000" />
+      <workItem from="1733816496254" duration="2391000" />
     </task>
     <task id="LOCAL-00001" summary="增加海外测试环境">
       <option name="closed" value="true" />
@@ -475,7 +477,14 @@
       <option name="project" value="LOCAL" />
       <updated>1733511806508</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="优化了自动写id 逻辑，增加本地id存储和校验">
+      <created>1733719502817</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1733719502817</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -503,7 +512,8 @@
     <MESSAGE value="优化逻辑 Rename_ScreenId.py 增加空文本以及其他情况下的screenId文件处理" />
     <MESSAGE value="增加16吋升级逻辑" />
     <MESSAGE value="增加 auto_write_screenid.py 脚本，支持烧录完后自动写入屏幕之前的id。智能检测干扰设备，智能检测网络环境是否满足" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加 auto_write_screenid.py 脚本，支持烧录完后自动写入屏幕之前的id。智能检测干扰设备，智能检测网络环境是否满足" />
+    <MESSAGE value="优化了自动写id 逻辑，增加本地id存储和校验" />
+    <option name="LAST_COMMIT_MESSAGE" value="优化了自动写id 逻辑，增加本地id存储和校验" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -531,7 +541,7 @@
     <SUITE FILE_PATH="coverage/poweroff$nmap.coverage" NAME="nmap Coverage Results" MODIFIED="1710148386077" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/AppData/Local/Programs/Python/Python312/Lib/site-packages/nmap" />
     <SUITE FILE_PATH="coverage/poweroff$switch_version_to_custom.coverage" NAME="switch_version_to_custom Coverage Results" MODIFIED="1726015569528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$auto_switch_server.coverage" NAME="auto_switch_server Coverage Results" MODIFIED="1730178169122" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/poweroff$auto_write_screenid.coverage" NAME="auto_write_screenid Coverage Results" MODIFIED="1733719431086" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$auto_write_screenid.coverage" NAME="auto_write_screenid Coverage Results" MODIFIED="1733818394163" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$auto_upgrade.coverage" NAME="auto_upgrade Coverage Results" MODIFIED="1733509255199" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
