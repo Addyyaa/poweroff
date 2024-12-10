@@ -220,7 +220,7 @@ def main():
         while True:
             result = detect_devices_thread(addresses, screen_info, screens, device_num)
             if result:
-                with open("screenId.ini", "w") as f:
+                with open("screenId.ini", "a") as f:
                     for i in screens:
                         f.write(i + "\n")
                 break
