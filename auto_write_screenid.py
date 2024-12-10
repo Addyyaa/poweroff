@@ -195,6 +195,7 @@ def the_second_detect_devices_thread(addresses, screen_info, screens, device_num
 
 def main():
     try:
+        config = False
         while True:
             ssid = get_current_wifi_ssid()
             if "xiaomi" not in ssid:
@@ -206,19 +207,45 @@ def main():
         print("已连接WiFi：【xiaomi】")
         while True:
             try:
-                device_num = int(input("请输入需要扫描的设备数量:"))
+                device_num = input("请输入需要扫描的设备数量:")
+                if device_num == "config":
+                    config = True
+                    break
+                device_num = int(device_num)
                 break
             except Exception:
                 print("输入有误，请重新输入")
-        screen_info = []
-        screens = []
-        tns_ids = []
+        if config:
+            while True:
+                try:
+                    config_id = input("请输入强制检测的屏幕id， 以空格进行分割（注：强制检测会一直检测直到扫描到屏幕）：")
+                    # int(config_id)   # 开启数字校验
+                    break
+                except Exception:
+                    print("输入有误，请重新输入屏幕的后六位数字")
+                    continue
+            config_id = str(config_id).split()
+            device_num = len(config_id)
         addresses = lan_ip_detect()
         addresses = [str(ip) for ip in addresses]
         while True:
+            tns_ids = []
+            screens = []
+            scaned_conifg_id = []
+            screen_info = []
             result = detect_devices_thread(addresses, screen_info, screens, device_num)
             if result:
-                with open("screenId.ini", "a") as f:
+                if config:
+                    for i in config_id:
+                        for j in screens:
+                            if i == j[-(len(i)):]:
+                                scaned_conifg_id.append(j)
+                    if len(config_id) != len(scaned_conifg_id):
+                        continue
+                    print(f"强制检测模式，正在扫描屏幕：{config_id}，已扫描={scaned_conifg_id}")
+                    print(f"已扫描到的强制检测屏幕id：{scaned_conifg_id}，以及准备用来烧录的id：{screens}")
+                with open("screenId.ini", "w") as f:
+                    print("写入屏幕id：" + str(screens))
                     for i in screens:
                         f.write(i + "\n")
                 break
@@ -238,9 +265,7 @@ def main():
             time.sleep(1)
         with open("screenId.ini", "r", encoding='utf-8') as f:
             lines = [i.replace("\n", "") for i in (f.readlines())]
-        print(f"本地屏幕id：{lines}")
         # 遍历 screens 将其中的id 写入到空id屏幕中
-        print("id库：", screens)
         for screen_id, tn in zip(screens, tns_ids):
             screen_id = screen_id.split("=", 1)[1].strip()
             tn.write(b"echo '' > /customer/screenId.ini\n")
@@ -259,7 +284,6 @@ def main():
         with open("screenId.ini", "w") as f:
             for i in lines:
                 f.write(i + "\n")
-        print(f"本地lines读取：{lines}")
         input("所有屏幕id均已写入完成，按回车键退出")
     except KeyboardInterrupt:
         with open("screenId.ini", "w") as f:
