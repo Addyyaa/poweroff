@@ -195,8 +195,6 @@ def the_second_detect_devices_thread(addresses, screen_info, screens, device_num
 
 def main():
     try:
-        with open("screenId.ini", "r", encoding='utf-8') as f:
-            lines = [i.replace("\n", "") for i in (f.readlines())]
         while True:
             ssid = get_current_wifi_ssid()
             if "xiaomi" not in ssid:
@@ -238,6 +236,9 @@ def main():
             if result:
                 break
             time.sleep(1)
+        with open("screenId.ini", "r", encoding='utf-8') as f:
+            lines = [i.replace("\n", "") for i in (f.readlines())]
+        print(f"本地屏幕id：{lines}")
         # 遍历 screens 将其中的id 写入到空id屏幕中
         print("id库：", screens)
         for screen_id, tn in zip(screens, tns_ids):
@@ -258,7 +259,7 @@ def main():
         with open("screenId.ini", "w") as f:
             for i in lines:
                 f.write(i + "\n")
-
+        print(f"本地lines读取：{lines}")
         input("所有屏幕id均已写入完成，按回车键退出")
     except KeyboardInterrupt:
         with open("screenId.ini", "w") as f:
