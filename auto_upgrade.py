@@ -11,35 +11,52 @@ import subprocess
 import ipaddress
 import socket
 
+
 def lan_ip_detect():
-    # 先获取本机地址
-    host_name = socket.gethostname()
-    host = socket.gethostbyname(host_name)
-    # 执行命令并获取输出
-    result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-    index = result.rfind(host)
-    result = result[index::]
-    index = result.find("Subnet Mask")
-    if index == -1:
-        index = result.find("子网掩码")
-    result = result[index::]
-    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    subnet_mask = re.search(pattern, result).group()
-    index = result.find("Default Gateway")
-    if index == -1:
-        index = result.find("默认网关")
-    result = result[index::]
-    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    gateway_ip = re.search(pattern, result).group()
-    print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
-    network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-    # 获取可用主机范围
-    addresses = list(network.hosts())
-    start_ip = list(network.hosts())[0]
-    end_ip = list(network.hosts())[-1]
-    start_ip = str(start_ip)
-    end_ip = str(end_ip)
+    try:
+        # 先获取本机地址
+        host_name = socket.gethostname()
+        host = socket.gethostbyname(host_name)
+        # 执行命令并获取输出
+        result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
+        index = result.rfind(host)
+        result = result[index::]
+        index = result.find("Subnet Mask")
+        if index == -1:
+            index = result.find("子网掩码")
+        result = result[index::]
+        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        subnet_mask = re.search(pattern, result).group()
+        index = result.find("Default Gateway")
+        if index == -1:
+            index = result.find("默认网关")
+        result = result[index::]
+        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        gateway_ip = re.search(pattern, result).group()
+        print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
+        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+        # 获取可用主机范围
+        addresses = list(network.hosts())
+        start_ip = list(network.hosts())[0]
+        end_ip = list(network.hosts())[-1]
+        start_ip = str(start_ip)
+        end_ip = str(end_ip)
+    except Exception:
+        while True:
+            try:
+                gateway_ip = input("请输入正确的网关地址：")
+                ipaddress.IPv4Network(gateway_ip)
+                break
+            except ipaddress.AddressValueError:
+                print("请输入正确的网关地址")
+        subnet_mask = "255.255.255.0"
+        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
+        # 获取可用主机范围
+        addresses = [str(ip) for ip in network.hosts()]
+        start_ip = addresses[0]
+        end_ip = addresses[-1]
     return start_ip, end_ip, addresses
+
 
 def ip_match(str):
     pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
@@ -49,12 +66,14 @@ def ip_match(str):
     else:
         return False
 
+
 def tel_print(str: bytes):
     content = str.rfind(b"\r\n")
     if content == -1:
         return ""
     else:
         return content
+
 
 def get_latest_print(tn: telnetlib.Telnet):
     times = 0
@@ -71,6 +90,8 @@ def get_latest_print(tn: telnetlib.Telnet):
             if times >= 7:
                 logging.error(f"内容为：{content}")
                 return False
+
+
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
         tn = telnetlib.Telnet(host, port, timeout=0.5)
@@ -83,6 +104,8 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.write(b"ya!2dkwy7-934^\n")
             tn.read_until(b"login: can't chdir to home directory '/home/root'", timeout=2)
             tn.write(b"cat customer/screenId.ini\n")
+            # 没有屏幕id可以打开
+            print(host)
             # 循环防止未来得及读取到屏幕id的情况
             while True:
                 time.sleep(0.3)
@@ -129,7 +152,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             ok = tn_list[i].read_until(b"0", timeout=2).decode("utf-8")
         end_time = time.time()
         if end_time - start_time > 10:
-            print(f'{end_time-start_time}s超时，无法获取屏幕配置')
+            print(f'{end_time - start_time}s超时，无法获取屏幕配置')
             return i, 201
     result = ok.strip().replace(" ", "")
     index = result.rfind('=')
@@ -137,7 +160,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
         display_type = result[index + 1:index + 2:1]
         logging.info(f"version:{version}")
         if version == "1":
-            # if display_type == "5":
+            # if display_type == "5":.
             #     file_path = os.path.join(resource_path, 'ota_packet/64GB/China/10.1/SStarOta.bin.gz')
             # elif display_type == "6":
             #     file_path = os.path.join(resource_path, 'ota_packet/64GB/China/13.3/SStarOta.bin.g')
@@ -158,6 +181,8 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
                 # 8为BOE屏
             elif display_type == "8":
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/China/800-1280-BOE/SStarOta.bin.gz')
+            elif display_type == "9":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/16/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
@@ -173,6 +198,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             # elif display_type == "3":
             #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/10.1/SStarOta.bin.gz')
             # elif display_type == "4":
+
             #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/13.3/SStarOta.bin.gz')
             if display_type == "1" or display_type == "3" or display_type == "5":
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/10.1/SStarOta.bin.gz')
@@ -182,6 +208,8 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/800-1280/SStarOta.bin.gz')
             elif display_type == "8":
                 file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/800-1280-BOE/SStarOta.bin.gz')
+            elif display_type == "9":
+                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/16/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
@@ -211,7 +239,7 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             tn_list[i].write(b"tcpsvd -vE 0.0.0.0 21 ftpd -w / &\n")
             content = get_latest_print(tn_list[i])
             if content:
-                content=content.decode("utf-8")
+                content = content.decode("utf-8")
             else:
                 print(f"{screens[i]}：ftp服务开启失败，升级失败")
                 return False
@@ -278,7 +306,6 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
     else:
         content = content.decode("utf-8")
 
-
     if "SStarOta.bin.gz" in content:
         if update_firmware == '1':
             tn_list[i].write(b"rm /upgrade/restore/SStarOta.bin.gz\n")
@@ -331,7 +358,6 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
     else:
         print(f"{screens[i]}固件上传失败，请重试")
         return False
-
 
 
 def scan_ip_range(start_ip, end_ip, port, addresses):
@@ -445,7 +471,8 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
             count = 1
             while True:
                 count += 1
-                futures = [executor.submit(upgrade, i, tn_list, screens, host_list, version, update_firmware) for i in fail_list]
+                futures = [executor.submit(upgrade, i, tn_list, screens, host_list, version, update_firmware) for i in
+                           fail_list]
                 # 获取升级的状态码
                 completed = 0
                 for f in concurrent.futures.as_completed(futures):
