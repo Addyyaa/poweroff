@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['auto_write_screenid.py'],
+    ['auto_upgrade2.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -21,7 +21,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='auto_write_screenid',
+    name='auto_upgrade_beata',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -34,4 +34,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['resource/icon/upgrade.ico'],
+    onefile=True
 )

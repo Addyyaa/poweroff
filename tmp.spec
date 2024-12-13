@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['auto_write_screenid.py'],
+    ['tmp.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -21,7 +21,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='auto_write_screenid',
+    name='tmp',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

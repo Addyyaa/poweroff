@@ -357,7 +357,7 @@ port = 23
 screen_list = []
 tn_list = []
 host_list = []
-with concurrent.futures.ThreadPoolExecutor() as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
     future = [executor.submit(scan_port, str(ip), port) for ip in addresses]
     completed = 0
     # 等待线程执行完毕
