@@ -3,5 +3,6 @@
 *.exe
 dist/
 build/
+resource/ota_packet
 
 
