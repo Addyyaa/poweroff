@@ -1,6 +1,7 @@
 import concurrent.futures
 import logging
 import os
+import platform
 import sys
 import telnetlib
 import time
@@ -133,6 +134,54 @@ def int_to_ip(ip_int):
     return '.'.join(str((ip_int >> (8 * i)) & 255) for i in range(3, -1, -1))
 
 
+def generate_ota_package():
+    current_directory = os.getcwd()
+    ota_package_path = os.path.join(current_directory, 'ota_package')
+    country = ['CN', "US"]
+    screen_type = ['10.1', '13.3', '16', '800-1280', '800-1280-BOE']
+    while True:
+        if not os.path.exists(ota_package_path):
+            print("未检测到OTA目录，开始生成OTA目录")
+            for i in country:
+                for j in screen_type:
+                    os.makedirs(os.path.join(ota_package_path, i, j))
+            print("OTA目录创建成功")
+            return ota_package_path
+        else:
+            for i in country:
+                for j in screen_type:
+                    if not os.path.exists(os.path.join(ota_package_path, i, j)):
+                        os.makedirs(os.path.join(ota_package_path, i, j))
+            return ota_package_path
+
+
+def detect_ota_package(ota_path: str):
+    no_ota = []
+    fine_name = 'SStarOta.bin.gz'
+    for i in os.listdir(ota_path):
+        for j in os.listdir(os.path.join(ota_path, i)):
+            no_ota_path = os.path.join(ota_path, i, j)
+            file_list = os.listdir(os.path.join(ota_path, i, j))
+            if fine_name in file_list:
+                print(f"检测到 {j} 升级包：{fine_name}文件")
+            else:
+                print(f"未检测到 {j} 目录下有：{fine_name}文件")
+                no_ota.append(no_ota_path)
+    return no_ota
+
+
+def open_dir(file_path):
+    if platform.system() == "Windows":
+        os.startfile(file_path)
+    elif platform.system() == "Darwin":
+        subprocess.Popen(["open", file_path])
+    else:
+        try:
+            subprocess.Popen(["xdg-open", file_path])
+        except OSError:
+            print("无法打开文件管理器，请手动打开目录：", file_path)
+
+
 def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, version: str, update_firmware: str):
     """:return 201 表示获取屏幕配置超时
         :lcd_type 3表示没有sd卡的10.1 4表示没有有sd卡的13.3，5表示有sd卡的10.1 6表示有sd卡的13.3
@@ -141,8 +190,8 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
     tn_list[i].write(b"cat /customer/config.ini | grep lcd_type && echo ok\n")
     ok = tn_list[i].read_until(b"0", timeout=2).decode("utf-8")
     remote_file_path = '/upgrade/SStarOta.bin.gz'
-    base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
-    resource_path = os.path.join(base_path, 'resource')
+    base_path = os.getcwd()
+    resource_path = os.path.join(base_path, 'ota_package')
     start_time = time.time()
     while True:
         if "0" in ok:
@@ -173,16 +222,16 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
             # elif display_type == "4":
             #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/China/13.3/SStarOta.bin.gz')
             if display_type == "1" or display_type == "3" or display_type == "5":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/10.1/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'CN/10.1/SStarOta.bin.gz')
             elif display_type == "2" or display_type == "4" or display_type == "6":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/13.3/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'CN/13.3/SStarOta.bin.gz')
             elif display_type == "7":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/800-1280/SStarOta.bin.gz')  # 7 群创屏 ，
+                file_path = os.path.join(resource_path, 'CN/800-1280/SStarOta.bin.gz')  # 7 群创屏 ，
                 # 8为BOE屏
             elif display_type == "8":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/800-1280-BOE/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'CN/800-1280-BOE/SStarOta.bin.gz')
             elif display_type == "9":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/China/16/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'CN/16/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
@@ -201,15 +250,15 @@ def upgrade(i: int, tn_list: list[telnetlib.Telnet], screens: list, host: list, 
 
             #     file_path = os.path.join(resource_path, 'ota_packet/VideoVersion/USA/13.3/SStarOta.bin.gz')
             if display_type == "1" or display_type == "3" or display_type == "5":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/10.1/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'US/10.1/SStarOta.bin.gz')
             elif display_type == "2" or display_type == "4" or display_type == "6":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/13.3/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'US/13.3/SStarOta.bin.gz')
             elif display_type == "7":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/800-1280/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'US/800-1280/SStarOta.bin.gz')
             elif display_type == "8":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/800-1280-BOE/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'US/800-1280-BOE/SStarOta.bin.gz')
             elif display_type == "9":
-                file_path = os.path.join(resource_path, 'ota_packet/64GB/USA/16/SStarOta.bin.gz')
+                file_path = os.path.join(resource_path, 'US/16/SStarOta.bin.gz')
             else:
                 print(f"屏幕{screens[i]}未知类型, 未升级")
                 return False
@@ -371,7 +420,7 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
     host_list = []
     upgrade_screens = []
     # 使用线程池
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         future = [executor.submit(scan_port, str(ip), port) for ip in addresses]
         completed = 0
         # 等待线程执行完毕
@@ -512,7 +561,21 @@ def scan_ip_range(start_ip, end_ip, port, addresses):
             input("存在设备升级失败，请检查")
 
 
+def start_setup():
+    path = generate_ota_package()
+    no_ota_dir_list = detect_ota_package(path)
+    if len(no_ota_dir_list) != 0:
+        print("部分设备没有配置升级包，请按配置好升级包后重新运行本程序")
+        time.sleep(2)
+        for i in no_ota_dir_list:
+            open_dir(i)
+        sys.exit(1)
+
+
+
+
 def main():
+    start_setup()
     # 设置要扫描的IP地址范围和端口号
     start_ip, end_ip, addresses = lan_ip_detect()
     port = 23  # Telnet端口号

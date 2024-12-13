@@ -7,9 +7,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="优化了自动写id 逻辑，增加本地id存储和校验">
+    <list default="true" id="d1ac1633-e887-4d83-b3c4-36c47095bf41" name="Changes" comment="修复多屏写idbug">
+      <change afterPath="$PROJECT_DIR$/auto_upgrade2.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resource/icon/upgrade.ico" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auto_write_screenid.py" beforeDir="false" afterPath="$PROJECT_DIR$/auto_write_screenid.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auto_upgrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/auto_upgrade.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screenId.ini" beforeDir="false" afterPath="$PROJECT_DIR$/screenId.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp2.py" beforeDir="false" afterPath="$PROJECT_DIR$/tmp2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,36 +98,14 @@
       <recent name="C:\Users\Administrator\PycharmProjects\poweroff\resource\China" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="F:\Project\poweroff\resource\icon" />
       <recent name="F:\Project\poweroff\resource" />
       <recent name="D:\PythonProject\poweroff\resource\ota_packet\64GB\China\13.3" />
       <recent name="D:\PythonProject\poweroff\resource\ota_packet\64GB\China\10.1" />
       <recent name="C:\Users\Administrator\PycharmProjects\poweroff\resource" />
-      <recent name="C:\Users\Administrator\PycharmProjects\poweroff" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.auto_write_screenid">
-    <configuration name="Rename_ScreenId" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="poweroff" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Rename_ScreenId.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.auto_upgrade2">
     <configuration name="auto_upgrade" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="poweroff" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -138,6 +120,28 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/auto_upgrade.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="auto_upgrade2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="poweroff" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/auto_upgrade2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -214,11 +218,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.auto_write_screenid" />
+        <item itemvalue="Python.auto_upgrade2" />
         <item itemvalue="Python.tmp2" />
+        <item itemvalue="Python.auto_write_screenid" />
         <item itemvalue="Python.switchSever" />
         <item itemvalue="Python.auto_upgrade" />
-        <item itemvalue="Python.Rename_ScreenId" />
       </list>
     </recent_temporary>
   </component>
@@ -373,6 +377,8 @@
       <workItem from="1733732400524" duration="1282000" />
       <workItem from="1733793504253" duration="1639000" />
       <workItem from="1733816496254" duration="2391000" />
+      <workItem from="1733965600846" duration="1981000" />
+      <workItem from="1734052395349" duration="9129000" />
     </task>
     <task id="LOCAL-00001" summary="增加海外测试环境">
       <option name="closed" value="true" />
@@ -483,7 +489,21 @@
       <option name="project" value="LOCAL" />
       <updated>1733719502817</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="修复本地文件id记录bug">
+      <created>1733820412397</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1733820412397</updated>
+    </task>
+    <task id="LOCAL-00017" summary="修复多屏写idbug">
+      <created>1733827256715</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1733827256716</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -512,7 +532,9 @@
     <MESSAGE value="增加16吋升级逻辑" />
     <MESSAGE value="增加 auto_write_screenid.py 脚本，支持烧录完后自动写入屏幕之前的id。智能检测干扰设备，智能检测网络环境是否满足" />
     <MESSAGE value="优化了自动写id 逻辑，增加本地id存储和校验" />
-    <option name="LAST_COMMIT_MESSAGE" value="优化了自动写id 逻辑，增加本地id存储和校验" />
+    <MESSAGE value="修复本地文件id记录bug" />
+    <MESSAGE value="修复多屏写idbug" />
+    <option name="LAST_COMMIT_MESSAGE" value="修复多屏写idbug" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -523,24 +545,25 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/auto_upgrade.py</url>
-          <line>468</line>
+          <line>471</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/poweroff$switchSever.coverage" NAME="switchSever Coverage Results" MODIFIED="1733718404276" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/poweroff$tmp2.coverage" NAME="tmp2 Coverage Results" MODIFIED="1733719010639" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$tmp2.coverage" NAME="tmp2 Coverage Results" MODIFIED="1734063211799" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$upgrade.coverage" NAME="upgrade Coverage Results" MODIFIED="1710117256251" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$telenet3.coverage" NAME="telenet3 Coverage Results" MODIFIED="1709013207740" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/poweroff$tmp.coverage" NAME="tmp Coverage Results" MODIFIED="1710254551076" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$Rename_ScreenId.coverage" NAME="Rename_ScreenId Coverage Results" MODIFIED="1733509243704" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/poweroff$main.coverage" NAME="main Coverage Results" MODIFIED="1720488239842" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$nmap.coverage" NAME="nmap Coverage Results" MODIFIED="1710148386077" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/AppData/Local/Programs/Python/Python312/Lib/site-packages/nmap" />
-    <SUITE FILE_PATH="coverage/poweroff$switch_version_to_custom.coverage" NAME="switch_version_to_custom Coverage Results" MODIFIED="1726015569528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$auto_switch_server.coverage" NAME="auto_switch_server Coverage Results" MODIFIED="1730178169122" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/poweroff$auto_write_screenid.coverage" NAME="auto_write_screenid Coverage Results" MODIFIED="1733820330284" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$switchSever.coverage" NAME="switchSever Coverage Results" MODIFIED="1733718404276" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$tmp.coverage" NAME="tmp Coverage Results" MODIFIED="1710254551076" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$main.coverage" NAME="main Coverage Results" MODIFIED="1720488239842" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$auto_upgrade2.coverage" NAME="auto_upgrade2 Coverage Results" MODIFIED="1734063389737" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$switch_version_to_custom.coverage" NAME="switch_version_to_custom Coverage Results" MODIFIED="1726015569528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/poweroff$auto_write_screenid.coverage" NAME="auto_write_screenid Coverage Results" MODIFIED="1733897962788" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/poweroff$auto_upgrade.coverage" NAME="auto_upgrade Coverage Results" MODIFIED="1733509255199" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
