@@ -41,6 +41,18 @@ def get_latest_print(tn: telnetlib.Telnet):
                 logging.error(f"内容为：{content}")
                 return False
 
+def find_all_occurrences(s, search_value):
+    indices = []
+    start_index = 0
+
+    while True:
+        index = s.find(search_value, start_index)
+        if index == -1:
+            break
+        indices.append(index)
+        start_index = index + len(search_value)  # 移动到下一个可能的匹配位置
+
+    return indices
 
 def lan_ip_detect():
     try:
@@ -53,19 +65,27 @@ def lan_ip_detect():
             result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
             index = result.rfind(host)
             result = result[index::]
-            index = result.find("Subnet Mask")
-            if index == -1:
-                index = result.find("子网掩码")
-            result = result[index::]
-            pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-            subnet_mask = re.search(pattern, result).group()
-            index = result.find("Default Gateway")
-            if index == -1:
-                index = result.find("默认网关")
-            result = result[index::]
-            pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-            gateway_ip = re.search(pattern, result).group()
-            print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
+            all_indices = find_all_occurrences(result, "Subnet Mask")
+            if all_indices:
+                if len(all_indices) > 1:
+                    index = all_indices[-1]
+                else:
+                    index = all_indices[0]
+                # index = result.find("Subnet Mask")
+                # if index == -1:
+                #     index = result.find("子网掩码")
+                result = result[index::]
+                pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+                subnet_mask = re.search(pattern, result).group()
+                index = result.find("Default Gateway")
+                if index == -1:
+                    index = result.find("默认网关")
+                result = result[index::]
+                pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+                gateway_ip = re.search(pattern, result).group()
+            else:
+                print("没有找到子网掩码信息")
+
         elif os_type == "posix":
             interfaces = netifaces.interfaces()
             # 遍历所有网络接口
@@ -124,6 +144,7 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
                 match = re.search(pattern, s)
                 if match:
                     screen = match.group()
+                    print(f"发现屏幕：{screen}")
                     break
         else:
             tn.close()
@@ -150,6 +171,7 @@ def get_current_wifi_ssid():
 
 
 def detect_devices_thread(addresses, screen_info, screens, device_num):
+    # print(f"addresses: {addresses}, screen_info: {screen_info}, screens: {screens}")
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         results = executor.map(scan_port, addresses, [23] * len(addresses))
         for result in results:
@@ -198,7 +220,7 @@ def main():
         config = False
         while True:
             ssid = get_current_wifi_ssid()
-            if "xiaomi" not in ssid:
+            if "xiaomi" not in ssid and "NETGEAR12-5G" not in ssid:
                 print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
                 time.sleep(3)
                 continue
