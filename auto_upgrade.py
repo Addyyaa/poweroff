@@ -24,8 +24,9 @@ def lan_ip_detect():
         index = result.find("子网掩码")
     result = result[index::]
     pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    subnet_mask = re.search(pattern, result).group()
+    # subnet_mask = re.search(pattern, result).group()
     index = result.find("Default Gateway")
+    subnet_mask = '255.255.255.0'
     if index == -1:
         index = result.find("默认网关")
     result = result[index::]

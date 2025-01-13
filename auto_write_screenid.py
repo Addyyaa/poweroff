@@ -144,7 +144,6 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
                 match = re.search(pattern, s)
                 if match:
                     screen = match.group()
-                    print(f"发现屏幕：{screen}")
                     break
         else:
             tn.close()
@@ -220,7 +219,7 @@ def main():
         config = False
         while True:
             ssid = get_current_wifi_ssid()
-            if "xiaomi" not in ssid and "NETGEAR12-5G" not in ssid:
+            if "xiaomi" not in ssid and "NETGEAR12-5G" not in ssid and "OST" not in ssid:
                 print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
                 time.sleep(3)
                 continue

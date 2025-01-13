@@ -1,59 +1,26 @@
-import re
-import subprocess
-import ipaddress
-import socket
+class person():
+    name = ''
+    sex = ''
+    age = 0
+    region = 'China'
 
-def lan_ip_detect():
-    # 执行命令并获取输出
-    result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-    host_name = socket.gethostname()
-    host = socket.gethostbyname(host_name)
-    index = result.rfind(host)
-    result = result[index::]
-    index = result.find("Default Gateway")
-    result = result[index::]
-    print(result)
-    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    match = re.search(pattern, result)
-    print(match)
-    lan_contents = result[index::].splitlines()
-    print(lan_contents)
-    lan_contents.pop(0)
-    lan_contents.pop(0)
-    lan_content = []
-    for i in lan_contents:
-        if i != "":
-            lan_content.append(i)
-            lan_content.append("\n")
-        else:
-            break
-    lan_content = "".join(lan_content)
-    ipv4_str = lan_content[lan_content.lower().find("IPv4".lower())::].splitlines()[0]
-    mask_index = lan_content.lower().find("Mask".lower())
-    if mask_index == -1:
-        mask_index = lan_content.lower().find("子网掩码".lower())
-    subnet_mask_str = lan_content[mask_index::].splitlines()[0]
-    gateway_index = lan_content.lower().find("Gateway".lower())
-    if gateway_index == -1:
-        gateway_index = lan_content.lower().find("默认网关".lower())
-    gateway_str = lan_content[gateway_index::]
-    gateway_ip = ip_match(gateway_str)
-    subnet_mask = ip_match(subnet_mask_str)
-    network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-    # 获取可用主机范围
-    start_ip = list(network.hosts())[0]
-    end_ip = list(network.hosts())[-1]
-    start_ip = str(start_ip)
-    end_ip = str(end_ip)
-    return start_ip, end_ip
+    def __init__(self, name, sex, age):
+        self.name = name
+        self.sex = sex
+        self.age = age
 
-def ip_match(str):
-    pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    match = re.search(pattern, str)
-    if match:
-        return match.group()
-    else:
-        return False
+    def tell_personal_info(self):
+        print(f'我叫：{self.name} 是一个 {self.sex}生，今年我 {self.age}岁', {self.region})
+
+    def set_region(self):
+        self.region = 'USA'
+
+    def action(self, eat, watch):
+        print(f'我喜欢吃{eat}，我也喜欢看{watch}')
 
 
-lan_ip_detect()
+niye = person('倪晔', '男', 18)
+niye.tell_personal_info()
+shenfeng = person('沈峰', '男', 22)
+shenfeng.tell_personal_info()
+shenfeng.action('电影', '饭')
