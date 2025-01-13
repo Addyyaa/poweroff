@@ -1,8 +1,11 @@
-*.zip
-*.gz
-*.exe
-dist/
-build/
-resource/ota_packet
+# 忽略所有文件
+*
 
+# 但不忽略 .py 文件
+!*.py
 
+# 如果有特定目录也需要排除，使用类似的规则
+# 例如：忽略 dist 目录中的所有文件
+/dist/*
+# 但是不忽略 .py 文件
+!dist/**/*.py
