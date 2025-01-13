@@ -12,6 +12,7 @@ import configparser
 from typing import Union
 import concurrent.futures
 import netifaces
+import psutil
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
@@ -45,63 +46,31 @@ def get_latest_print(tn: telnetlib.Telnet):
 
 
 def lan_ip_detect():
-    os_type = os.name
-    # 先获取本机地址
-    host_name = socket.gethostname()
-    host = socket.gethostbyname(host_name)
-    if os_type == "nt":
-        # 执行命令并获取输出
-        result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-        index = result.rfind(host)
-        result = result[index::]
-        index = result.find("Subnet Mask")
-        if index == -1:
-            index = result.find("子网掩码")
-        result = result[index::]
-        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-        subnet_mask = re.search(pattern, result).group()
-        index = result.find("Default Gateway")
-        if index == -1:
-            index = result.find("默认网关")
-        result = result[index::]
-        pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-        gateway_ip = re.search(pattern, result).group()
-        print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
-    elif os_type == "posix":
-        print("识别为 mac")
-        interfaces = netifaces.interfaces()
-        # 遍历所有网络接口
-        addr_info = None
-        local_ips = []
-        subnet_mask = []
-        for interface in interfaces:
-            ifaddresses = netifaces.ifaddresses(interface)
-            if netifaces.AF_INET in ifaddresses:
-                for link in ifaddresses[netifaces.AF_INET]:
-                    ip = link['addr']
-                    if not ip.startswith("127.") and not ip.startswith("169.254"):
-                        addresses = netifaces.ifaddresses(interface)
-                        for i in addresses.values():
-                           for j in i:
-                               if 'netmask' in j:
-                                if j['netmask'].startswith("255."):
-                                    local_ips.append(j['addr'])
-                                    subnet_mask.append(j['netmask'])
-        if len(local_ips) == 1 and len(subnet_mask) == 1:
-            gateway_ip = netifaces.gateways()['default'][netifaces.AF_INET][0]
-            subnet_mask = subnet_mask[0]
-            print(f'subnet_mask={subnet_mask}, gateway_ip={gateway_ip}')
+    gateways = netifaces.gateways()
+    gateway = gateways['default'][2][0]
+    addresses = []
+    # 获取网络接口状态
+    stats = psutil.net_if_stats()
+    # 获取所有网络接口地址信息
+    for interface, addrs in psutil.net_if_addrs().items():
+        # 检查接口是否是活动的
+        if interface in stats and stats[interface].isup:
+            for addr in addrs:
+                if addr.family == socket.AF_INET:
+                    addresses.append({f'{interface}': addr.address, 'netmask': addr.netmask})
+    ipv4 = addresses
+    address = ''
+    for i in ipv4:
+        if "wlan" in str(i.keys()).lower() or 'eth' in str(i.keys()).lower() or '本地连接' in i.keys() or 'lan' in str(
+                i.keys()).lower():
+            address = i
+            break
         else:
-            input(f'未能获取到 ip 地址==>local_ips:{local_ips}, sub_mask:{subnet_mask}')
-            sys.exit()
-    try:
-        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-    except Exception as e:
-        print(f"无法获取本机地址：{e}")
-        sys.exit()
-    # 获取可用主机范围
-    addresses = list(network.hosts())
-    return addresses
+            address = ipv4[0]
+            break
+    address = dict(address)
+    network = list(ipaddress.IPv4Network(f"{gateway}/{address['netmask']}", strict=False).hosts())
+    return network
 
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
