@@ -45,6 +45,12 @@ def get_latest_print(tn: telnetlib.Telnet):
                 return False
 
 
+# 将 netmask 转换为整数
+def netmask_to_int(netmask):
+    # 利用 ipaddress 模块将子网掩码转为整数
+    return int(ipaddress.IPv4Address(netmask))
+
+
 def lan_ip_detect():
     gateways = netifaces.gateways()
     gateway = gateways['default'][2][0]
@@ -54,22 +60,13 @@ def lan_ip_detect():
     # 获取所有网络接口地址信息
     for interface, addrs in psutil.net_if_addrs().items():
         # 检查接口是否是活动的
-        if interface in stats and stats[interface].isup:
+        if interface in stats:
             for addr in addrs:
                 if addr.family == socket.AF_INET:
                     addresses.append({f'{interface}': addr.address, 'netmask': addr.netmask})
     ipv4 = addresses
-    address = ''
-    for i in ipv4:
-        if "wlan" in str(i.keys()).lower() or 'eth' in str(i.keys()).lower() or '本地连接' in i.keys() or 'lan' in str(
-                i.keys()).lower():
-            address = i
-            break
-        else:
-            address = ipv4[0]
-            break
-    address = dict(address)
-    network = list(ipaddress.IPv4Network(f"{gateway}/{address['netmask']}", strict=False).hosts())
+    netmast = max(ipv4, key=lambda x: netmask_to_int(x['netmask']))['netmask']
+    network = list(ipaddress.IPv4Network(f"{gateway}/{netmast}", strict=False).hosts())
     return network
 
 
@@ -418,6 +415,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
             continue
         else:
             break
+
     future = [executor.submit(modify_location, screen, tn, host, version) for screen, tn, host in
               zip(operate_screen, operate_tn, operate_host)]
     concurrent.futures.wait(future)
