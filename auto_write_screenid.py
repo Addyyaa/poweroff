@@ -11,6 +11,8 @@ from typing import Union
 import netifaces
 import concurrent.futures
 
+import psutil
+
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
 
@@ -41,63 +43,27 @@ def get_latest_print(tn: telnetlib.Telnet):
                 logging.error(f"内容为：{content}")
                 return False
 
+def netmask_to_int(netmask):
+    # 利用 ipaddress 模块将子网掩码转为整数
+    return int(ipaddress.IPv4Address(netmask))
 
 def lan_ip_detect():
-    try:
-        os_type = os.name
-        # 先获取本机地址
-        host_name = socket.gethostname()
-        host = socket.gethostbyname(host_name)
-        if os_type == "nt":
-            # 执行命令并获取输出
-            result = subprocess.run(["ipconfig"], capture_output=True, text=True).stdout
-            index = result.rfind(host)
-            result = result[index::]
-            index = result.find("Subnet Mask")
-            if index == -1:
-                index = result.find("子网掩码")
-            result = result[index::]
-            pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-            subnet_mask = re.search(pattern, result).group()
-            index = result.find("Default Gateway")
-            if index == -1:
-                index = result.find("默认网关")
-            result = result[index::]
-            pattern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-            gateway_ip = re.search(pattern, result).group()
-            print(f"本机地址：{host}\n子网掩码：{subnet_mask}\n网关地址：{gateway_ip}")
-        elif os_type == "posix":
-            interfaces = netifaces.interfaces()
-            # 遍历所有网络接口
-            addr_info = None
-            for interface in interfaces:
-                if interface == "en0":
-                    addr_info = netifaces.ifaddresses(interface)
-                    break
-            if addr_info and netifaces.AF_INET in addr_info:
-                address = addr_info[netifaces.AF_INET][0]
-                subnet_mask = address.get("netmask")
-                gateway_ip = netifaces.gateways()['default'][netifaces.AF_INET][0]
-        try:
-            network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-        except Exception as e:
-            print(f"无法获取本机地址：{e}")
-            sys.exit()
-        # 获取可用主机范围
-        addresses = list(network.hosts())
-    except Exception:
-        while True:
-            try:
-                gateway_ip = input("请输入正确的网关地址：")
-                ipaddress.IPv4Network(gateway_ip)
-                break
-            except ipaddress.AddressValueError:
-                print("请输入正确的网关地址")
-        subnet_mask = "255.255.255.0"
-        network = ipaddress.IPv4Network(f"{gateway_ip}/{subnet_mask}", strict=False)
-        # 获取可用主机范围
-        addresses = [str(ip) for ip in network.hosts()]
-    return addresses
+    gateways = netifaces.gateways()
+    gateway = gateways['default'][2][0]
+    addresses = []
+    # 获取网络接口状态
+    stats = psutil.net_if_stats()
+    # 获取所有网络接口地址信息
+    for interface, addrs in psutil.net_if_addrs().items():
+        # 检查接口是否是活动的
+        if interface in stats:
+            for addr in addrs:
+                if addr.family == socket.AF_INET:
+                    addresses.append({f'{interface}': addr.address, 'netmask': addr.netmask})
+    ipv4 = addresses
+    netmast = max(ipv4, key=lambda x: netmask_to_int(x['netmask']))['netmask']
+    network = list(ipaddress.IPv4Network(f"{gateway}/{netmast}", strict=False).hosts())
+    return network
 
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
@@ -196,15 +162,15 @@ def the_second_detect_devices_thread(addresses, screen_info, screens, device_num
 def main():
     try:
         config = False
-        while True:
-            ssid = get_current_wifi_ssid()
-            if "xiaomi" not in ssid:
-                print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
-                time.sleep(3)
-                continue
-            else:
-                break
-        print("已连接WiFi：【xiaomi】")
+        # while True:
+        #     ssid = get_current_wifi_ssid()
+        #     # if "xiaomi" not in ssid:
+        #     #     print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
+        #     #     time.sleep(3)
+        #     #     continue
+        #     # else:
+        #     #     break
+        # print("已连接WiFi：【xiaomi】")
         while True:
             try:
                 device_num = input("请输入需要扫描的设备数量:")
