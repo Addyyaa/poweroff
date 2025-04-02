@@ -160,17 +160,18 @@ def the_second_detect_devices_thread(addresses, screen_info, screens, device_num
 
 
 def main():
+    wifi = input("请输入烧录环境的WiFi名：")
     try:
         config = False
-        # while True:
-        #     ssid = get_current_wifi_ssid()
-        #     # if "xiaomi" not in ssid:
-        #     #     print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
-        #     #     time.sleep(3)
-        #     #     continue
-        #     # else:
-        #     #     break
-        # print("已连接WiFi：【xiaomi】")
+        while True:
+            ssid = get_current_wifi_ssid()
+            if wifi not in ssid:
+                print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
+                time.sleep(3)
+                continue
+            else:
+                break
+        print("已连接WiFi：【xiaomi】")
         while True:
             try:
                 device_num = input("请输入需要扫描的设备数量:")

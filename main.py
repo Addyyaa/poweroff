@@ -6,6 +6,7 @@ import time
 import re
 import subprocess
 
+
 class TelnetThread(threading.Thread):
     def __init__(self, host, port, user_name, password, result, detect_time, pid_name):
         super().__init__()
@@ -23,7 +24,8 @@ class TelnetThread(threading.Thread):
         count = 0
         while True:
             try:
-                ping_result = subprocess.run(["ping", "-n", "1", self.host], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=1)
+                ping_result = subprocess.run(["ping", "-n", "1", self.host], stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE, text=True, timeout=1)
                 print(ping_result.stdout, ping_result.stderr)
                 # 检测到设备上线，建立连接
                 if ping_result.returncode == 0:
