@@ -3,9 +3,9 @@
 
 a = Analysis(
     ['auto_upgrade.py'],
-    pathex=['D:/Project/poweroff'],
+    pathex=[],
     binaries=[],
-    datas=[('resource', 'resource')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -21,7 +21,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='auto_upgrade64GB',
+    name='auto_upgrade',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -34,5 +34,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['resource\\icon\\auto_upgrade.ico'],
 )

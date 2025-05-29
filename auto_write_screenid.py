@@ -10,7 +10,8 @@ import os
 from typing import Union
 import netifaces
 import concurrent.futures
-
+from login import Login
+import requests
 import psutil
 
 # 定义日志
@@ -251,12 +252,90 @@ def main():
         with open("screenId.ini", "w") as f:
             for i in lines:
                 f.write(i + "\n")
+        try_times = 0
+        while True:
+            if try_times >= 3:
+                logging.error("绑定失败，手动配网创建屏幕组后注册设备")
+                break
+            regist_result = bind_device(screen_id)
+            try_times += 1
+            if regist_result:
+                break
+            else:
+                time.sleep(10)
+        
+
         input("所有屏幕id均已写入完成，按回车键退出")
     except KeyboardInterrupt:
         with open("screenId.ini", "w") as f:
             for i in lines:
                 f.write(i + "\n")
 
+def bind_device(screen_id: str):
+    token = Login("15250996938", "sf123123").login()
+    logging.info(f"获取到token：{token}")
+    domain = "cloud-service-us.austinelec.com"
+    port = "8080"
+    headers = {
+        "Content-Type": "application/json",
+        "X-TOKEN": token
+    }
+    screen_group_id = None
+    def add_screen_group():
+        # 绑定屏幕组
+        api = f"http://{domain}:{port}/api/v1/host/screen/group/add"
+        bind_data = {
+            "screenGroupName": "burnTmp",
+            "screenIdList": [screen_id],
+            "type": 2
+        }
+        response = requests.post(api, json=bind_data, headers=headers)
+        if response.status_code == 200 and response.json()["code"] == 20:
+            screen_group_id = response.json()["data"]
+            return screen_group_id
+        else:
+            logging.error(f"绑定屏幕组失败：{response.json()}")
+            return False
+    
+    def delete_screen_group():
+        api = f"http://{domain}:{port}/api/v1/host/screen/group/del"
+        delete_data = {
+            "screenGroupId": screen_group_id,
+            "screenIdList": [],
+            "isDelGroup": 1
+        }
+        response = requests.post(api, json=delete_data, headers=headers)
+        if response.status_code == 200 and response.json()["code"] == 20:
+            return True
+        else:
+            logging.error(f"删除屏幕组失败：{response.json()}")
+            return False
+        
+    def init_device_info():
+        api = f"http://{domain}:{port}/api/v1/screenVideo/extend/{screen_id}"
+        response = requests.get(api, headers=headers)
+        if response.status_code == 200 and response.json()["code"] == 20:
+            data = response.json()["data"]
+            if "totalStorage" in data and data["totalStorage"] > 0:
+                return True
+            else:
+                logging.error(f"非64GB设备，请检查：{data}")
+                return False
+        else:
+            logging.error(f"获取设备信息失败：{response.json()["data"]}")
+            return False
+    screen_group_id = add_screen_group()
+    if screen_group_id:
+        if init_device_info():
+            delete_screen_group()
+            return True
+        else:
+            return False
+    else:
+        return False
+
+    
+    
 
 if __name__ == '__main__':
     main()
