@@ -333,9 +333,11 @@ def bind_device(screen_id: str):
     screen_group_id = add_screen_group()
     if screen_group_id:
         if init_device_info():
-            delete_screen_group()
+            if not delete_screen_group():
+                logging.info(f"{screen_id}设备注册成功，但删除屏幕组失败")
             return True
         else:
+            delete_screen_group()
             return False
     else:
         return False
@@ -345,3 +347,8 @@ def bind_device(screen_id: str):
 
 if __name__ == '__main__':
     main()
+    # screenId = "PS91d7ecLtest20"
+    # if bind_device(screenId):
+    #     print("绑定成功")
+    # else:
+    #     print("绑定失败")
