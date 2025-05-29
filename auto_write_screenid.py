@@ -161,11 +161,16 @@ def the_second_detect_devices_thread(addresses, screen_info, screens, device_num
 
 
 def main():
-    wifi = input("请输入烧录环境的WiFi名：")
+    # wifi = input("请输入烧录环境的WiFi名：")
+    wifi = "xiaomi"
+    wifi_sec = "NETGEAR12-5G"
     try:
         config = False
         while True:
             ssid = get_current_wifi_ssid()
+            if wifi_sec in ssid:
+                print("已连接到小米路由器，请将电脑WiFi连接至 【NETGEAR12-5G】wifi")
+                break
             if wifi not in ssid:
                 print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
                 time.sleep(3)
@@ -317,6 +322,7 @@ def bind_device(screen_id: str):
         if response.status_code == 200 and response.json()["code"] == 20:
             data = response.json()["data"]
             if "totalStorage" in data and data["totalStorage"] > 0:
+                logging.info(f"{screen_id}设备注册成功")
                 return True
             else:
                 logging.error(f"非64GB设备，请检查：{data}")
