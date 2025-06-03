@@ -10,10 +10,28 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'tkinter', 'tkinter.*',
+        'turtle',
+        'unittest', 'unittest.*',
+        'test', 'test.*',
+        'doctest',
+        'pdb', 'pdb.*',
+        'cProfile',
+        'profile',
+        'pstats',
+        'PyQt4', 'PyQt5', 'PyQt6',
+        'PySide', 'PySide2', 'PySide6',
+        'wx', 'wx.*',
+        'numpy', 'numpy.*',
+        'scipy', 'scipy.*',
+        'matplotlib', 'matplotlib.*',
+        'pandas', 'pandas.*',
+    ],
     noarchive=False,
+    optimize=1,
 )
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, a.zipped_data, cipher=None, optimize=1)
 
 exe = EXE(
     pyz,
@@ -28,7 +46,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

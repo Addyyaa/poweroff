@@ -346,9 +346,9 @@ def bind_device(screen_id: str):
     
 
 if __name__ == '__main__':
-    main()
-    # screenId = "PS91d7ecLtest20"
-    # if bind_device(screenId):
-    #     print("绑定成功")
-    # else:
-    #     print("绑定失败")
+    # main()
+    screenId = "PS91d7ecLtest20"
+    if bind_device(screenId):
+        print("绑定成功")
+    else:
+        print("绑定失败")

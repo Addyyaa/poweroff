@@ -1,14 +1,10 @@
 import ipaddress
 import socket
-import subprocess
 import sys
 import telnetlib
-from ftplib import FTP
 import logging
 import time
 import re
-import os
-import configparser
 from typing import Union
 import concurrent.futures
 import netifaces
@@ -16,8 +12,14 @@ import psutil
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
-
-
+mqtt_ini = None
+mqtt_log = None
+local_ini = "/software/local.ini"
+cn_server_release = "cloud-service.austinelec.com"
+cn_server_test = "139.224.192.36"
+en_server_release = "cloud-service-us.austinelec.com"
+en_server_test = "18.215.241.226"
+mqtt_port = 1883
 # 扫描指定范围内的IP地址的指定端口
 
 def tel_print(str: bytes):
@@ -69,6 +71,15 @@ def lan_ip_detect():
     network = list(ipaddress.IPv4Network(f"{gateway}/{netmast}", strict=False).hosts())
     return network
 
+def is_new_firmware(tn: telnetlib.Telnet) -> bool:
+    tn.write(b"ls /tmp/app_versions && echo $?\n")
+    time.sleep(1)
+    result = tn.read_very_eager().decode('utf-8')
+    if '0' in result:
+        return True
+    else:
+        return False
+
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
@@ -94,135 +105,140 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             return [screen, tn, host]
         else:
             tn.close()
+        
     except Exception:
         return False
 
 
-def modify_location(screen: str, tn: telnetlib.Telnet, host: str, version: str):
+def modify_location(screen: str, tn: telnetlib.Telnet, host: str, option: str):
     times1 = 0
     times2 = 0
+    # 检查是否是新的版本固件
+    is_new_fw = set_config(tn)
+    local_value = "1"
+    mqtt_prefix = "echo [mqtt]"
+    cn_mqtt_value_prefix = "echo cn_host="
+    en_mqtt_value_prefix = "echo en_host="
+    local_prefix = "echo [local]"
+    local_value_prefix = "echo local="
+    old_local_ini_path = "/upgrade/local.ini"
+    selected_server = ""
     while True:
-        if version == "1":
-            tn.write(b"echo [local] > /software/local.ini \n")
-            tn.write(b"echo local=1 >> /software/local.ini \n")
-            tn.write(b'echo [mqtt] >  /software/mqtt.ini \n')
-            tn.write(b'echo cn_host=cloud-service.austinelec.com >>  /software/mqtt.ini \n')
-            tn.write(b'echo cn_port=1883 >>  /software/mqtt.ini \n')
-            tn.write(b'echo en_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini \n')
-            tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
-            tn.write(b'sync\n')
-            tn.write(b"cat /software/mqtt.ini | grep cloud-service.austinelec.com\n")
-            while True:
-                result = get_latest_print(tn)
-                if result:
-                    if b'cn_host=cloud-service.austinelec.com' in result:
-                        print(f"设备：{host} \t{screen}服务地址已更改")
-                        break
-                    else:
-                        print(f"设备：{host} 服务地址更改失败")
-                        if times1 >= 10:
-                            print(f'设备{host}多次切换失败请联系售后')
-                            sys.exit()
-                        times1 += 1
-                        continue
-            tn.write(b'cat /software/local.ini | grep 1\n')
-            result = get_latest_print(tn)
-            if result:
-                if b'local=1' in result:
-                    print(f"设备：{host} 配置1已更改")
-                    break
-                else:
-                    print(f"设备：{host} 配置1更改失败")
-                    if times1 >= 10:
-                        print(f'设备{host}多次切换失败请联系售后')
-                        sys.exit()
-                    times1 += 1
-                    continue
-            else:
-                print(f"设备：{host} 未获取到结果即将重新尝试")
-                if times1 >= 10:
-                    print(f'设备{host}多次切换失败请联系售后')
-                    sys.exit()
-                continue
-        elif version == '2':
-            tn.write(b"echo [local] > /software/local.ini \n")
-            tn.write(b"echo local=2 >> /software/local.ini \n")
-            tn.write(b'sync\n')
-            tn.write(b'cat /software/local.ini | grep 2\n')
-            result = get_latest_print(tn)
-            if result:
-                if b'local=2' in result:
-                    print(f"设备：{host} 配置1已更改")
-                    break
-                else:
-                    print(f"设备：{host} 配置1更改失败")
-                    if times1 >= 10:
-                        print(f'设备{host}多次切换失败请联系售后')
-                        sys.exit()
-                    times1 += 1
-                    continue
-            else:
-                print(f"设备：{host} 未获取到结果即将重新尝试")
-                if times1 >= 10:
-                    print(f'设备{host}多次切换失败请联系售后')
-                    sys.exit()
-                continue
+        if times1 >= 10:
+            logging.error(f"版本切换失败，请重新尝试或者联系售后")
+            break
+        if option == "1":
+            selected_server = cn_server_release
+            tn.write(f"{mqtt_prefix} > {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{cn_mqtt_value_prefix}{cn_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{en_mqtt_value_prefix}{en_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{local_prefix} > {local_ini}\n".encode('utf-8'))
+            tn.write(f"{local_value_prefix}{local_value} >> {local_ini}\n".encode('utf-8'))
+            if not is_new_fw: 
+                tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
+                tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        elif option == "2":
+            selected_server = en_server_release
+            local_value = "2"
+            tn.write(f"{mqtt_prefix} > {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{cn_mqtt_value_prefix}{cn_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{en_mqtt_value_prefix}{en_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{local_prefix} > {local_ini}\n".encode('utf-8'))
+            tn.write(f"{local_value_prefix}{local_value} >> {local_ini}\n".encode('utf-8'))
+            if not is_new_fw:
+                tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
+                tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        elif option == "3":  # 大陆版，但是要是英语 
+            selected_server = cn_server_release
+            tn.write(f"{mqtt_prefix} > {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{cn_mqtt_value_prefix}{en_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{en_mqtt_value_prefix}{cn_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            # 将location改为2
+            local_value = "2"
+            tn.write(f"{local_prefix} > {local_ini}\n".encode('utf-8'))
+            tn.write(f"{local_value_prefix}{local_value} >> {local_ini}\n".encode('utf-8'))
+            if not is_new_fw:
+                tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
+                tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        elif option == "4":  # 海外版，但是要是中文
+            selected_server = en_server_release
+            tn.write(f"{mqtt_prefix} > {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{cn_mqtt_value_prefix}{en_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{en_mqtt_value_prefix}{cn_server_release} >> {mqtt_ini}\n".encode('utf-8'))
+            # 将location改为1
+            local_value = "1"
+            tn.write(f"{local_prefix} > {local_ini}\n".encode('utf-8'))
+            tn.write(f"{local_value_prefix}{local_value} >> {local_ini}\n".encode('utf-8'))
+            if not is_new_fw:
+                tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
+                tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        elif option == "5":  # 国内测试环境
+            selected_server = cn_server_test
+            tn.write(f"{mqtt_prefix} > {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{cn_mqtt_value_prefix}{cn_server_test} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{en_mqtt_value_prefix}{en_server_test} >> {mqtt_ini}\n".encode('utf-8'))
+            # 将location改为1
+            local_value = "1"
+            tn.write(f"{local_prefix} > {local_ini}\n".encode('utf-8'))
+            tn.write(f"{local_value_prefix}{local_value} >> {local_ini}\n".encode('utf-8'))
+            if not is_new_fw:
+                tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
+                tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        else: # 海外测试环境
+            selected_server = en_server_test
+            tn.write(f"{mqtt_prefix} > {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{cn_mqtt_value_prefix}{cn_server_test} >> {mqtt_ini}\n".encode('utf-8'))
+            tn.write(f"{en_mqtt_value_prefix}{en_server_test} >> {mqtt_ini}\n".encode('utf-8'))
+            # 将location改为2
+            local_value = "2"
+            tn.write(f"{local_prefix} > {local_ini}\n".encode('utf-8'))
+            tn.write(f"{local_value_prefix}{local_value} >> {local_ini}\n".encode('utf-8'))
+            if not is_new_fw:
+                tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
+                tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        # 校验是否切换成功
+        def check_switch_success(tn: telnetlib.Telnet):
+            ck_cmd = [f'killall -9 mymqtt\n', f'cat {mqtt_log} | grep {selected_server} && echo $?-success\n']
+            try:
+                # 先清空日志
+                tn.write(f'echo "" > {mqtt_log}\n'.encode('utf-8'))
+                tn.write(ck_cmd[0].encode('utf-8'))
+                for _ in range(10):
+                    tn.write(ck_cmd[1].encode('utf-8'))
+                    result = tn.read_very_eager()
+                    if '0-success' in result.decode('utf-8', errors='ignore'):
+                        return True
+                    time.sleep(1)
+            except Exception as e:
+                print(f"check_switch_success 异常: {e}")
+                import traceback
+                traceback.print_exc()
+                return False
+        if check_switch_success(tn):
+            print(f"{screen}-{host}\t版本切换成功")
+            return True
+        else:
+            times1 += 1
+            continue
+        
+        
+        
+    
 
+def set_config(tn):
+    try:
+        global mqtt_log, mqtt_ini
+        is_new_fw = is_new_firmware(tn)
+        logging.info(f"是否为新的固件：{is_new_fw}")
+        if is_new_fw:
+            mqtt_ini = "/software/mqtt.ini"
+            mqtt_log = "/customer/logs/mqtt/mqtt.log"
         else:
-            input("选项错误")
-            sys.exit()
-    while True:
-        if version == "1":
-            tn.write(b"echo [local] > /upgrade/local.ini \n")
-            tn.write(b"echo local=1 >> /upgrade/local.ini \n")
-            tn.write(b'sync\n')
-            tn.write(b'cat /upgrade/local.ini | grep 1\n')
-            result = get_latest_print(tn)
-            if result:
-                if b'local=1' in result:
-                    print(f"设备：{host} 配置2已更改")
-                    break
-                else:
-                    print(f"设备：{host} 配置2更改失败")
-                    if times2 >= 10:
-                        print(f'设备{host}多次切换失败请联系售后')
-                        sys.exit()
-                    times2 += 1
-                    continue
-            else:
-                print(f"设备：{host} 未获取到结果即将重新尝试")
-                if times2 >= 10:
-                    print(f'设备{host}多次切换失败请联系售后')
-                    sys.exit()
-                continue
-        elif version == '2':
-            tn.write(b"echo [local] > /upgrade/local.ini \n")
-            tn.write(b"echo local=2 >> /upgrade/local.ini \n")
-            tn.write(b'sync\n')
-            tn.write(b'cat /upgrade/local.ini | grep 2\n')
-            result = get_latest_print(tn)
-            if result:
-                if b'local=2' in result:
-                    print(f"设备：{host} 配置2已更改")
-                    break
-                else:
-                    print(f"设备：{host} 配置2更改失败")
-                    if times2 >= 10:
-                        print(f'设备{host}多次切换失败请联系售后')
-                        sys.exit()
-                    times2 += 1
-                    continue
-            else:
-                print(f"设备：{host} 未获取到结果即将重新尝试")
-                if times2 >= 10:
-                    print(f'设备{host}多次切换失败请联系售后')
-                    sys.exit()
-                continue
-        else:
-            input("选项错误")
-            sys.exit()
-    print(f"设备：{host} 切换成功,建议重启屏幕")
-    tn.write(b"kill $(pidof mymqtt) &\n")
+            mqtt_ini = "/software/mqtt.ini"
+            mqtt_log = "/software/mqtt/mymqtt.log"
+        return is_new_fw
+    except Exception as e:
+        print(f"---->{e}")
 
 
 def cmd_check(tn: telnetlib.Telnet, cmd: list, text: str):
@@ -242,81 +258,6 @@ def cmd_check(tn: telnetlib.Telnet, cmd: list, text: str):
                 times1 += 1
                 continue
 
-
-def modify_server(screen: str, tn: telnetlib.Telnet, host: str, option: str):
-    if option == "1":
-        # tn.write(b"echo [mqtt] >  /software/mqtt.ini \n")
-        # tn.write(b'echo cn_host=cloud-service.austinelec.com >>  /software/mqtt.ini \n')
-        # tn.write(b'echo cn_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_host=cloud-service.austinelec.com >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=cloud-service.austinelec.com >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini',
-               'echo en_host=cloud-service.austinelec.com >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync',
-               'cat /software/mqtt.ini | grep cloud-service.austinelec.com']
-        result = cmd_check(tn, cmd, "cloud-service.austinelec.com")
-        if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
-        else:
-            input(f"设备：{host} 服务地址更改失败，按回车退出程序")
-            sys.exit()
-    elif option == "2":
-        # tn.write(b"echo [mqtt] >  /software/mqtt.ini \n")
-        # tn.write(b'echo cn_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini \n')
-        # tn.write(b'echo cn_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ',
-               'echo cn_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini',
-               'echo en_host=cloud-service-us.austinelec.com >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync',
-               'cat /software/mqtt.ini | grep cloud-service-us.austinelec.com']
-        result = cmd_check(tn, cmd, "cloud-service-us.austinelec.com")
-        if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
-        else:
-            input(f"设备：{host} 服务地址更改失败，按回车退出程序")
-            sys.exit()
-    elif option == "3":
-        # tn.write(b"echo [mqtt] >  /software/mqtt.ini \n")
-        # tn.write(b'echo cn_host=139.224.192.36 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo cn_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_host=139.224.192.36 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=139.224.192.36 >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=139.224.192.36 >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep 139.224.192.36']
-        result = cmd_check(tn, cmd, "139.224.192.36")
-        if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
-        else:
-            input(f"设备：{host} 服务地址更改失败，按回车退出程序")
-            sys.exit()
-    elif option == "4":
-        # tn.write(b"echo [mqtt] >  /software/mqtt.ini \n")
-        # tn.write(b'echo cn_host=18.215.241.226 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo cn_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_host=18.215.241.226 >>  /software/mqtt.ini \n')
-        # tn.write(b'echo en_port=1883 >>  /software/mqtt.ini \n')
-        # tn.write(b'sync\n')
-        cmd = ['echo [mqtt] >  /software/mqtt.ini ', 'echo cn_host=18.215.241.226 >>  /software/mqtt.ini',
-               'echo cn_port=1883 >>  /software/mqtt.ini', 'echo en_host=18.215.241.226 >>  /software/mqtt.ini',
-               'echo en_port=1883 >>  /software/mqtt.ini', 'sync', 'cat /software/mqtt.ini | grep 18.215.241.226']
-        result = cmd_check(tn, cmd, "18.215.241.226")
-        if result:
-            print(f"设备：{host} \t{screen}服务地址已更改")
-        else:
-            input(f"设备：{host} 服务地址更改失败，按回车退出程序")
-            sys.exit()
-    else:
-        input("选项错误")
-    print(f"设备：{host}\t{screen} 切换成功,建议重启屏幕")
-    tn.write(b"kill $(pidof mymqtt) &\n")
 
 
 addresses = lan_ip_detect()
@@ -356,7 +297,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
     operate_host = []
     while True:
         continue_to_circle = False
-        option = input('\n请选择要操作的屏幕，直接输入序号，可以以英文“,”、“;”和空格分割，0则为全部：\n')
+        option = input('\n请选择要操作的屏幕，直接输入序号，可以以英文"，"、";"和空格分割，0则为全部：\n')
         option = re.split(r'[ ,;]+', option.strip())
         if len(option) == 1 and option[0] == "0":
             operate_screen = screen_list
@@ -376,47 +317,36 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
             operate_host.append(host_list[int(i) - 1])
         break
 
-    while True:
-        option = input('请选择操作：\n1. 切换服务地址\n2. 切换版本\n请选择: ')
-        if option not in ["1", "2"]:
-            print("选项错误，请重新输入")
-            continue
-        else:
-            break
 
-    if option == "1":
-        while True:
-            server = input(
-                "\n请选择要切换的服务地址：\n1. 正式环境-国内\n2. 正式环境-美国\n3. 测试环境-国内\n4. 测试环境-国外2\n注意：工厂版本和预发布版本只需要切换到对应的服务器即可\n请选择: ")
+
+    while True:
+        is_inner_tool = False  # TODO 如果给外部使用需要变为False
+        if is_inner_tool:
+            option3 = "3. 测试环境-国内\n"
+            option4 = "4. 测试环境-国外\n"
+        else:
+            option3 = "3. 大陆版本-英文\n"
+            option4 = "4. 海外版本-中文\n"
+        server = input(
+            f"\n请选择要切换的服务地址：\n1. 正式环境-大陆版\n2. 正式环境-海外版\n{option3}{option4}请选择: ")
+        if is_inner_tool:
+            if server == "3":
+                server = "5"
+            elif server == "4":
+                server = "6"
+            if server not in ["1", "2", "5", "6"]:
+                print("选项错误，请重新输入")
+                continue
+            else:
+                break
+        else:
             if server not in ["1", "2", "3", "4"]:
                 print("选项错误，请重新输入")
                 continue
             else:
                 break
-        modify_server(screen, tn, host, server)
-        future = [executor.submit(modify_server, screen, tn, host, server) for screen, tn, host in
-                  zip(operate_screen, operate_tn, operate_host)]
-        concurrent.futures.wait(future)
-        while True:
-            continue_opterate = input('是否要进行版本切换？\n1. 是\n2. 否\n请选择: ')
-            if continue_opterate not in ["1", "2"]:
-                print("选项错误，请重新输入")
-                continue
-            else:
-                if continue_opterate == "2":
-                    sys.exit()
-                else:
-                    break
-
-    while True:
-        version = input("\n请选择要切换的版本：\n1. 中国\n2. 美国\n请选择: ")
-        if version not in ["1", "2"]:
-            print("选项错误，请重新输入")
-            continue
-        else:
-            break
-
-    future = [executor.submit(modify_location, screen, tn, host, version) for screen, tn, host in
-              zip(operate_screen, operate_tn, operate_host)]
+    future = [executor.submit(modify_location, screen, tn, host, server) for screen, tn, host in
+                zip(operate_screen, operate_tn, operate_host)]
     concurrent.futures.wait(future)
+
     input("切换完成!!!按回车键退出程序")
