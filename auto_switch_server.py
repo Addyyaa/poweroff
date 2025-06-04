@@ -12,9 +12,7 @@ import psutil
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
-mqtt_ini = None
-mqtt_log = None
-local_ini = "/software/local.ini"
+
 cn_server_release = "cloud-service.austinelec.com"
 cn_server_test = "139.224.192.36"
 en_server_release = "cloud-service-us.austinelec.com"
@@ -113,8 +111,9 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
 def modify_location(screen: str, tn: telnetlib.Telnet, host: str, option: str):
     times1 = 0
     times2 = 0
+    
     # 检查是否是新的版本固件
-    is_new_fw = set_config(tn)
+    is_new_fw, mqtt_ini, mqtt_log, local_ini = set_config(tn)
     local_value = "1"
     mqtt_prefix = "echo [mqtt]"
     cn_mqtt_value_prefix = "echo cn_host="
@@ -214,29 +213,34 @@ def modify_location(screen: str, tn: telnetlib.Telnet, host: str, option: str):
                 import traceback
                 traceback.print_exc()
                 return False
-        if check_switch_success(tn):
-            print(f"{screen}-{host}\t版本切换成功")
-            return True
-        else:
-            times1 += 1
-            continue
+        try:
+            if check_switch_success(tn):
+                print(f"{screen}-{host}\t版本切换成功")
+                return True
+            else:
+                times1 += 1
+                continue
+        except Exception as e:
+            logging.error(f"{host-screen}发生错误：{e}")
         
         
         
     
 
 def set_config(tn):
+    mqtt_ini = None
+    mqtt_log = None
+    local_ini = "/software/local.ini"
     try:
-        global mqtt_log, mqtt_ini
         is_new_fw = is_new_firmware(tn)
-        logging.info(f"是否为新的固件：{is_new_fw}")
+        logging.info(f"{screen}\t是否为新的固件：{is_new_fw}")
         if is_new_fw:
             mqtt_ini = "/software/mqtt.ini"
             mqtt_log = "/customer/logs/mqtt/mqtt.log"
         else:
             mqtt_ini = "/software/mqtt.ini"
             mqtt_log = "/software/mqtt/mymqtt.log"
-        return is_new_fw
+        return is_new_fw, mqtt_ini, mqtt_log, local_ini
     except Exception as e:
         print(f"---->{e}")
 
