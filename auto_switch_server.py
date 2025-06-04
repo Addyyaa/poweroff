@@ -320,7 +320,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
 
 
     while True:
-        is_inner_tool = False  # TODO 如果给外部使用需要变为False
+        is_inner_tool = True  # TODO 如果给外部使用需要变为False
         if is_inner_tool:
             option3 = "3. 测试环境-国内\n"
             option4 = "4. 测试环境-国外\n"
