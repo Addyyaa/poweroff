@@ -5,7 +5,7 @@ a = Analysis(
     ['auto_write_screenid.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('resource/software_init.sh', 'resource')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
