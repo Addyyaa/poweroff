@@ -11,7 +11,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'tkinter', 'unittest', 'test', 'html', 'xml', 'pydoc', 'distutils', 'setuptools',
+        'tkinter', 'unittest', 'test', 'xml', 'pydoc', 'distutils', 'setuptools',
         'aiohappyeyeballs', 'aiohttp', 'aioquic', 'aiosignal', 'altgraph', 'appdirs', 'Appium-Python-Client',
         'asgiref', 'attrs', 'Babel', 'beautifulsoup4', 'blinker', 'booleanOperations', 'Brotli',
         'cffi', 'cffsubr', 'chardet', 'charset-normalizer', 'click', 'colorama', 'colorlog', 'comtypes',
