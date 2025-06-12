@@ -6,7 +6,6 @@ import telnetlib
 import logging
 import time
 import re
-import os
 from typing import Union
 import netifaces
 import concurrent.futures
@@ -16,7 +15,9 @@ import psutil
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
-
+network_ips = None 
+mac_screen_id_dict = {}
+first_detect_devices_result = {}
 
 # 扫描指定范围内的IP地址的指定端口
 
@@ -64,11 +65,12 @@ def lan_ip_detect():
     ipv4 = addresses
     netmast = max(ipv4, key=lambda x: netmask_to_int(x['netmask']))['netmask']
     network = list(ipaddress.IPv4Network(f"{gateway}/{netmast}", strict=False).hosts())
+    global network_ips
+    network_ips = network
     return network
 
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
-    screen = None
     try:
         tn = telnetlib.Telnet(host, port, timeout=0.5)
         s = tn.read_until(b"login: ", timeout=0.5)
@@ -80,6 +82,7 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.write(b"ya!2dkwy7-934^\n")
             tn.read_until(b"login: can't chdir to home directory '/home/root'", timeout=2)
             tn.write(b"cat customer/screenId.ini\n")
+            tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success\n")
             start_time = time.time()
             # 循环防止未来得及读取到屏幕id的情况
             while True:
@@ -88,14 +91,15 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
                 time.sleep(0.3)
                 s = tn.read_very_eager().decode("utf-8")
                 pattern = r'deviceId=([^\r\n]*)'
+                pattern2 = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
                 match = re.search(pattern, s)
-                if match:
-                    screen = match.group()
-                    break
+                match2 = re.search(pattern2, s)
+                if match is not None and match2 is not None:
+                    match_result1 = match.group(1)
+                    match_result2 = match2.group()
+                    return [match_result1, match_result2, host, tn]
         else:
             tn.close()
-        if screen is not None:
-            return [screen, tn, host]
     except Exception:
         return False
 
@@ -115,57 +119,36 @@ def get_current_wifi_ssid():
     except subprocess.CalledProcessError:
         return None  # 如果命令执行失败
 
-
-def detect_devices_thread(addresses, screen_info, screens, device_num):
+def scan_device_which_need_write_screenid(dest_mac_address:str):
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-        results = executor.map(scan_port, addresses, [23] * len(addresses))
-        for result in results:
+        futures = [executor.submit(scan_port, ip, 23) for ip in network_ips]
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
             if result:
-                tmp = {"Screen": result[0], "Telnet": result[1], "IP": result[2]}
-                if result[0] not in screens and result[0].strip() != "deviceId=":
-                    screen_info.append(tmp)
-                    screens.append(result[0])
-                if result[0].strip() == "deviceId=":
-                    print("发现无id设备，请找到屏幕并将其关闭")
-                    return False
-        if str(len(screen_info)) == "0":
-            print("未发现设备")
-            return False
-        elif len(screen_info) >= device_num:
-            return True
-        else:
-            return False
+                screen_id, mac_address, ip, tn = result
+                if mac_address == dest_mac_address:
+                    return [screen_id, ip, tn]
+    return False
 
-
-def the_second_detect_devices_thread(addresses, screen_info, screens, device_num, tns_ids):
+def first_detect_devices(addresses:list) -> dict:
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-        results = executor.map(scan_port, addresses, [23] * len(addresses))
-        for result in results:
+        futures = [executor.submit(scan_port, ip, 23) for ip in addresses]
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
             if result:
-                if result[0] in screens:
-                    screens.remove(result[0])
-                if result[0].strip() == "deviceId=":
-                    tns_ids.append(result[1])
-        if str(len(screen_info)) == "0":
-            print("未发现设备")
-            return False
-        elif len(tns_ids) == device_num:
-            print("设定的设备数量与检测到的无id设备数量一致")
-            return True
-        elif len(tns_ids) < device_num:
-            print("设定的设备数量大于检测到的无id设备数量")
-            return False
-        else:
-            print("设定的设备数量小于检测到的无id设备数量，请确认附近是否有其他无id的设备,若有请将其进行断电")
-            return False
-
+                global first_detect_devices_result
+                screen_id, mac_address, ip, tn = result
+                first_detect_devices_result[mac_address] = {"screen_id": screen_id, "ip": ip, "tn": tn}
+                mac_screen_id_dict[mac_address] = {"screen_id": screen_id, "ip": ip, "tn": tn}
+    return first_detect_devices_result
+    
 
 def main():
     # wifi = input("请输入烧录环境的WiFi名：")
-    wifi = "xiaomi"
-    wifi_sec = "NETGEAR12-5G"
-    try:
-        config = False
+    config = False
+    def check_wifi():
+        wifi = "xiaomi"
+        wifi_sec = "NETGEAR12-5G"
         while True:
             ssid = get_current_wifi_ssid()
             if wifi_sec in ssid:
@@ -178,103 +161,157 @@ def main():
             else:
                 break
         print("已连接WiFi：【xiaomi】")
+    
+    def ask_user_for_config():
         while True:
             try:
                 device_num = input("请输入需要扫描的设备数量:")
                 if device_num == "config":
-                    config = True
-                    break
-                device_num = int(device_num)
+                    return False
+                elif device_num.isdigit():
+                    device_num = int(device_num)
+                else:
+                    print("输入有误，请重新输入")
+                    continue
                 break
             except Exception:
                 print("输入有误，请重新输入")
+        return device_num
+    mac = write_screen_id(check_wifi, ask_user_for_config)
+    if mac:
+        # id 烧录后开始绑定屏幕组
+        retry_times = 3
+        for i in range(retry_times):
+            bind_result = bind_device(first_detect_devices_result[mac]['screen_id'])
+            if bind_result:
+                logging.error("绑定成功")
+                break
+            else:
+                logging.error(f"绑定失败，正在重试（{i+1}/{retry_times}）")
+                time.sleep(1)
+        else:
+            logging.error("绑定失败，已重试三次")
+    else:
+        print("烧录失败")
+
+def write_screen_id(check_wifi, ask_user_for_config):
+    try: 
+        check_wifi()
+        device_num = ask_user_for_config()
+        if not device_num:
+            config = True
+        else:
+            config = False
+
         if config:
             while True:
                 try:
                     config_id = input("请输入强制检测的屏幕id， 以空格进行分割（注：强制检测会一直检测直到扫描到屏幕）：")
-                    # int(config_id)   # 开启数字校验
+                    # int(config_id)   # 开启数字校验 
                     break
                 except Exception:
                     print("输入有误，请重新输入屏幕的后六位数字")
                     continue
-            config_id = str(config_id).split()
-            device_num = len(config_id)
-        addresses = lan_ip_detect()
-        addresses = [str(ip) for ip in addresses]
-        while True:
-            tns_ids = []
-            screens = []
-            scaned_conifg_id = []
-            screen_info = []
-            result = detect_devices_thread(addresses, screen_info, screens, device_num)
-            if result:
-                if config:
-                    for i in config_id:
-                        for j in screens:
-                            if i == j[-(len(i)):]:
-                                scaned_conifg_id.append(j)
-                    if len(config_id) != len(scaned_conifg_id):
-                        continue
-                    print(f"强制检测模式，正在扫描屏幕：{config_id}，已扫描={scaned_conifg_id}")
-                    print(f"已扫描到的强制检测屏幕id：{scaned_conifg_id}，以及准备用来烧录的id：{screens}")
-                with open("screenId.ini", "w") as f:
-                    print("写入屏幕id：" + str(screens))
-                    for i in screens:
-                        f.write(i + "\n")
-                break
-            time.sleep(1)
-        print("共检测到" + str(len(screen_info)) + f"个设备: {[{i['Screen']: i['IP']} for i in screen_info]}")
-        while True:
-            option = input("请开始烧录，烧录完后输入Y回车继续")
-            try:
-                if option.upper() == "Y":
-                    break
-            except Exception:
-                continue
-        while True:
-            result = the_second_detect_devices_thread(addresses, screen_info, screens, device_num, tns_ids)
-            if result:
-                break
-            time.sleep(1)
-        with open("screenId.ini", "r", encoding='utf-8') as f:
-            lines = [i.replace("\n", "") for i in (f.readlines())]
-        # 遍历 screens 将其中的id 写入到空id屏幕中
-        for screen_id, tn in zip(screens, tns_ids):
-            screen_id = screen_id.split("=", 1)[1].strip()
-            tn.write(b"echo '' > /customer/screenId.ini\n")
-            tn.write(b"echo [screen] > /customer/screenId.ini\n")
-            tn.write(b"echo deviceId=" + screen_id.encode('utf-8') + b" >> /customer/screenId.ini&& echo $?\n")
-            tn.read_until(b"0", timeout=2)
-            time.sleep(0.3)
-            s = tn.read_very_eager().decode("utf-8")
-            if "0" in s:
-                print(f"已写入设备{screen_id}")
-                tn.write(b"sync && /software/restart_bluetooth.sh\n")
-                # 删除本地文件中的屏幕id
-                for i in lines:
-                    if screen_id in i:
-                        lines.remove(i)
-        with open("screenId.ini", "w") as f:
-            for i in lines:
-                f.write(i + "\n")
-        try_times = 0
-        while True:
-            if try_times >= 3:
-                logging.error("绑定失败，手动配网创建屏幕组后注册设备")
-                break
-            regist_result = bind_device(screen_id)
-            try_times += 1
-            if regist_result:
-                break
-            else:
-                time.sleep(10)
-        
+            config_id = str(config_id)
+            def scanner_config_device():
+                addresses = lan_ip_detect()
+                addresses = [str(ip) for ip in addresses]
+                while True:
+                    first_detect_devices(addresses)
+                    for mac_address in first_detect_devices_result:
+                        if config_id in first_detect_devices_result[mac_address]["screen_id"]:
+                            print(f"已扫描到强制检测的屏幕id：{first_detect_devices_result[mac_address]['screen_id']}\t{first_detect_devices_result[mac_address]['ip']}")
+                            return mac_address
+                    print("未扫描到强制检测的屏幕id，即将重试")
+            
+            mac = scanner_config_device()
+            def ask_for_start():
+                while True:
+                    start_burn = str(input("是否开始烧录：(y/n)"))
+                    if start_burn.upper() in ['Y', 'N']:
+                        if start_burn.upper() == 'Y':
+                            break 
+                        else:
+                            continue
+                    else:
+                        logging.error("输入有误请重新输入")
+            ask_for_start()
 
-        input("所有屏幕id均已写入完成，按回车键退出")
-    except KeyboardInterrupt:
-        with open("screenId.ini", "w") as f:
-            for i in lines:
-                f.write(i + "\n")
+            def juadge_the_current_is_the_dest_devices():
+                tn = first_detect_devices_result[mac]['tn']
+                mac_address = get_device_mac_address(tn)
+                if mac_address == mac:
+                    return tn
+                else:
+                    return False
+
+            def write_screen_id(dest_tn):
+                cmd_list = ['echo "" > /customer/screenId.ini && echo $?-success-clear\n', f'echo [screen] > /customer/screenId.ini && echo $?-success-echo[screen]\n', f'echo deviceId={first_detect_devices_result[mac]['screen_id']} >> /customer/screenId.ini && echo $?-success-echo-screenID\n']
+                cmd_check_keyword = ['0-success-clear', '0-success-echo[screen]', '0-success-echo-screenID']
+                for index, cmd in enumerate(cmd_list):
+                    dest_tn.write(cmd.encode('utf-8'))
+                    result = dest_tn.read_until(cmd_check_keyword[index].encode('utf-8'), timeout=5).decode("utf-8")
+                    if cmd_check_keyword[index] not in result:
+                        return False
+                return True
+            def read_dest_mac_and_write_screenId():
+                dest_tn = get_dest_tn(mac, juadge_the_current_is_the_dest_devices)
+                while True:
+                    dest_tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success-read-mac\n")
+                    result = dest_tn.read_until(b"0-success-read-mac", timeout=1).decode("utf-8")
+                    if "0-success-read-mac" in result:
+                        try_times = 3
+                        while True:
+                            if write_screen_id(dest_tn):
+                                break
+                            else:
+                                try_times -= 1
+                                if try_times <= 0:
+                                    logging.error("屏幕id写入失败，请检查设备是否正常")
+                                    input("请按回车键退出程序")
+                                    sys.exit()
+                        return True
+                    else:
+                        time.sleep(3)
+                        continue
+            
+            try:
+                if read_dest_mac_and_write_screenId():
+                    return mac
+                else:
+                    return False
+            except Exception as e:
+                logging.error(f"错误：{e}")
+        else:
+            # 执行扫描指定数量的设备
+            addresses = lan_ip_detect()
+            addresses = [str(ip) for ip in addresses]
+            
+            while True:
+                result = first_detect_devices(addresses)
+                if len(result.keys()) >= device_num:
+                    return
+                else:
+                    time.sleep(1)
+                    continue
+            print(f"已扫描到{len(result)}\t{result}个设备")
+    except Exception as e:
+        logging.error(f"错误：{e}")
+
+
+
+def get_dest_tn(mac, juadge_the_current_is_the_dest_devices):
+    while True:
+        dest_tn = juadge_the_current_is_the_dest_devices()
+        if dest_tn:
+            return dest_tn
+        else:
+            dest_tn = scan_device_which_need_write_screenid(mac)
+            if dest_tn:
+                return dest_tn
+            else:
+                time.sleep(1)
+                continue
 
 def bind_device(screen_id: str):
     token = Login("15250996938", "sf123123").login()
@@ -326,7 +363,8 @@ def bind_device(screen_id: str):
                 return True
             else:
                 logging.error(f"非64GB设备，请检查：{data}")
-                return False
+                input("请按回车键退出程序")
+                sys.exit()
         else:
             logging.error(f"获取设备信息失败：{response.json()["data"]}")
             return False
@@ -342,13 +380,20 @@ def bind_device(screen_id: str):
     else:
         return False
 
-    
+def get_device_mac_address(tn:telnetlib.Telnet):
+    tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success\n")
+    result = tn.read_until(b"0-success", timeout=1).decode("utf-8")
+    if "0-success" in result:
+        pattern = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
+        match = re.search(pattern, result)
+        if match:
+            return match.group()
+        else:
+            return False
+    else:
+        return False
+
     
 
 if __name__ == '__main__':
-    # main()
-    screenId = "PS91d7ecLtest20"
-    if bind_device(screenId):
-        print("绑定成功")
-    else:
-        print("绑定失败")
+    main()
