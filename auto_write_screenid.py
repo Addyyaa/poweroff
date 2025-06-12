@@ -1,4 +1,5 @@
 import ipaddress
+import os
 import socket
 import subprocess
 import sys
@@ -12,12 +13,17 @@ import concurrent.futures
 from login import Login
 import requests
 import psutil
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+import shutil
+import threading
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
+current_host = None
 network_ips = None 
 mac_screen_id_dict = {}
 first_detect_devices_result = {}
+host_port = 9527
 
 # 扫描指定范围内的IP地址的指定端口
 
@@ -49,7 +55,25 @@ def netmask_to_int(netmask):
     # 利用 ipaddress 模块将子网掩码转为整数
     return int(ipaddress.IPv4Address(netmask))
 
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        logging.error("获取本机IP失败")
+        input("请按回车键退出程序")
+        s.close()
+        sys.exit()
+    finally:
+        s.close()
+    return ip
+
+current_host = get_local_ip()
+print(f"本机IP：{current_host}")
+
 def lan_ip_detect():
+    global current_host
     gateways = netifaces.gateways()
     gateway = gateways['default'][2][0]
     addresses = []
@@ -184,6 +208,11 @@ def main():
             bind_result = bind_device(first_detect_devices_result[mac]['screen_id'])
             if bind_result:
                 logging.error("绑定成功")
+                update_result = update_fw(first_detect_devices_result[mac]['tn'])  # 更新固件
+                if update_result:
+                    logging.error("更新固件成功")
+                else:
+                    logging.error("更新固件失败")
                 break
             else:
                 logging.error(f"绑定失败，正在重试（{i+1}/{retry_times}）")
@@ -298,7 +327,107 @@ def write_screen_id(check_wifi, ask_user_for_config):
     except Exception as e:
         logging.error(f"错误：{e}")
 
+def update_fw(tn:telnetlib.Telnet):
 
+    def start_http_server():
+        server = HTTPServer(('0.0.0.0', host_port), SimpleHTTPRequestHandler)
+        print(f"Serving HTTP Enabled")
+        thread = threading.Thread(target=server.serve_forever)
+        thread.daemon = True
+        thread.start()
+        return server, thread
+
+    def close_http_server(server, tmp_dir, original_dir):
+        server.server_close()
+        os.chdir(original_dir)
+        os.remove(os.path.join(tmp_dir, "software_init.sh"))
+        os.rmdir(tmp_dir)
+
+    def create_tmp_dir():
+        # 在程序所在位置创建临时目录
+        current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+        tmp_dir = os.path.join(current_dir, "tmp")
+        if not os.path.exists(tmp_dir):
+            os.makedirs(tmp_dir)
+        # 拷贝 software_init.sh 到 tmp 目录
+        src_path = os.path.join(current_dir, "resource", "software_init.sh")
+        dst_path = os.path.join(tmp_dir, "software_init.sh")
+        shutil.copyfile(src_path, dst_path)
+        os.chdir(tmp_dir)
+        server, http_thread = start_http_server()
+        # 返回原目录路径
+        return server, http_thread, tmp_dir, current_dir
+
+    def excuse_cmd(tn:telnetlib.Telnet):
+        print(f"开始更新固件")
+        cmd_list = [
+            "sed -i 's/FB_BUFFER_LEN[[:space:]]*=[[:space:]]*[0-9]*/FB_BUFFER_LEN = 9000/' /config/fbdev.ini && echo $?-success-sed\n",
+            "mkdir -p /customer/tmp && echo $?-success-mkdir\n",
+            "cd /customer/tmp && echo $?-success-cd\n",
+            "tar -xvf /upgrade/restore/SStarOta.bin.gz && echo $?-success-tar\n",
+            "cd ./script && echo $?-success-cd-script\n",
+            "rm ./software_init.sh && echo $?-success-rm-software_init.sh\n",
+            f"wget http://{current_host}:{host_port}/software_init.sh && echo $?-success-wget-software_init.sh\n",
+            "chmod +x ./software_init.sh && echo $?-success-chmod-software_init.sh\n",
+            "cd .. && echo $?-success-cd-..\n",
+            "tar -czvf SStarOta.bin.gz ./* && echo $?-success-tar-c\n",
+            "mv ./SStarOta.bin.gz /upgrade/restore/SStarOta.bin.gz && echo $?-success-mv-SStarOta.bin.gz\n",
+            "rm -rf /customer/tmp && echo $?-success-rm-tmp\n",
+            "md5sum /upgrade/restore/SStarOta.bin.gz | awk '{print $1}' > /upgrade/restore/rst_md5 && echo $?-success-md5sum\n",
+            "sync && echo $?-success-sync\n"
+        ]
+
+        check_keyword = ['0-success-sed', 
+                         '0-success-mkdir', 
+                         '0-success-cd', 
+                         '0-success-tar', 
+                         '0-success-cd-script', 
+                         '0-success-rm-software_init.sh', 
+                         '0-success-wget-software_init.sh', 
+                         '0-success-chmod-software_init.sh', 
+                         '0-success-cd-..',
+                         '0-success-tar-c', 
+                         '0-success-mv-SStarOta.bin.gz', 
+                         '0-success-rm-tmp', 
+                         '0-success-md5sum',
+                         '0-success-sync']
+        for index, cmd in enumerate(cmd_list):
+            logging.info(f"执行命令: {cmd.strip()}")
+            tn.write(cmd.encode('utf-8'))
+            result = tn.read_until(check_keyword[index].encode('utf-8'), timeout=60).decode("utf-8")
+            logging.info(f"命令返回: {result}")
+            if check_keyword[index] in result:
+                continue
+            else:
+                logging.error(f"命令未成功: {cmd.strip()}")
+                return False
+        return True
+
+    # 开启httpd服务
+    server, http_thread, tmp_dir, original_dir = create_tmp_dir()
+    # 更新固件
+    for i in range(3):
+        exc_result = excuse_cmd(tn)
+        if exc_result:
+            tn.write(b"reboot\n")
+            time.sleep(10)
+            tn.write(b"exit\n")
+            # 关闭http服务
+            server.shutdown()
+            http_thread.join()
+            close_http_server(server, tmp_dir, original_dir)
+            return True
+        else:
+            time.sleep(1)
+            continue
+    else:
+        logging.error("更新固件失败")
+        # 关闭http服务
+        server.shutdown()
+        http_thread.join()
+        close_http_server(server, tmp_dir, original_dir)
+        return False
+    
 
 def get_dest_tn(mac, juadge_the_current_is_the_dest_devices):
     while True:
