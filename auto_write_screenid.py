@@ -359,12 +359,15 @@ def update_fw(tn:telnetlib.Telnet):
         return server, http_thread, tmp_dir, current_dir
 
     def excuse_cmd(tn:telnetlib.Telnet):
+        version_num = input("请输入版本号：")
         print(f"开始更新固件")
         cmd_list = [
             "sed -i 's/FB_BUFFER_LEN[[:space:]]*=[[:space:]]*[0-9]*/FB_BUFFER_LEN = 9000/' /config/fbdev.ini && echo $?-success-sed\n",
             "mkdir -p /customer/tmp && echo $?-success-mkdir\n",
             "cd /customer/tmp && echo $?-success-cd\n",
             "tar -xvf /upgrade/restore/SStarOta.bin.gz && echo $?-success-tar\n",
+            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' /software/version.ini > temp.ini && mv temp.ini /software/version.ini && echo $?-success-modify-version1.ini\n",
+            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' ./version.ini > temp.ini && mv temp.ini ./version.ini && echo $?-success-modify-version2.ini\n",
             "cd ./script && echo $?-success-cd-script\n",
             "rm ./software_init.sh && echo $?-success-rm-software_init.sh\n",
             f"wget http://{current_host}:{host_port}/software_init.sh && echo $?-success-wget-software_init.sh\n",
@@ -381,6 +384,8 @@ def update_fw(tn:telnetlib.Telnet):
                          '0-success-mkdir', 
                          '0-success-cd', 
                          '0-success-tar', 
+                         '0-success-modify-version1.ini',
+                         '0-success-modify-version2.ini',
                          '0-success-cd-script', 
                          '0-success-rm-software_init.sh', 
                          '0-success-wget-software_init.sh', 
