@@ -72,8 +72,8 @@ def lan_ip_detect():
 
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
-        tn = telnetlib.Telnet(host, port, timeout=0.5)
-        s = tn.read_until(b"login: ", timeout=0.5)
+        tn = telnetlib.Telnet(host, port, timeout=2)
+        s = tn.read_until(b"login: ", timeout=2)
         index = tel_print(s)
         result = s[index::].decode("utf-8")
         if "login: " in result:
@@ -84,6 +84,7 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.write(b"cat customer/screenId.ini\n")
             tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success\n")
             start_time = time.time()
+
             # 循环防止未来得及读取到屏幕id的情况
             while True:
                 if time.time() - start_time > 10:
@@ -100,7 +101,7 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
                     return [match_result1, match_result2, host, tn]
         else:
             tn.close()
-    except Exception:
+    except Exception as e:
         return False
 
 
@@ -166,9 +167,7 @@ def main():
         while True:
             try:
                 device_num = input("请输入需要扫描的设备数量:")
-                if device_num == "config":
-                    return False
-                elif device_num.isdigit():
+                if device_num.isdigit():
                     device_num = int(device_num)
                 else:
                     print("输入有误，请重新输入")
@@ -195,24 +194,25 @@ def main():
         print("烧录失败")
 
 def write_screen_id(check_wifi, ask_user_for_config):
+    device_num = False
     try: 
         check_wifi()
-        device_num = ask_user_for_config()
-        if not device_num:
-            config = True
-        else:
-            config = False
-
-        if config:
-            while True:
+        while True:
+            user_input = input("请输入屏幕的后六位数字（如需输入设备数量请输入 'num'）：").strip()
+            if user_input.lower() == "num":
+                device_num = ask_user_for_config()
+                break
+            else:
                 try:
-                    config_id = input("请输入强制检测的屏幕id， 以空格进行分割（注：强制检测会一直检测直到扫描到屏幕）：")
-                    # int(config_id)   # 开启数字校验 
-                    break
+                    config_id = int(user_input)
                 except Exception:
-                    print("输入有误，请重新输入屏幕的后六位数字")
+                    print("输入有误，请重新输入")
                     continue
+                break
+
+        if not device_num:
             config_id = str(config_id)
+            print(f"强制检测的屏幕id：{config_id}")
             def scanner_config_device():
                 addresses = lan_ip_detect()
                 addresses = [str(ip) for ip in addresses]
