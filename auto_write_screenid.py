@@ -24,9 +24,45 @@ network_ips = None
 mac_screen_id_dict = {}
 first_detect_devices_result = {}
 host_port = 9527
+# 重新封装read和write
+def indentify_tn(tn:telnetlib.Telnet):
+    try:
+        def read_until(match, timeout=None):
+            try:
+                # 确保 match 是字符串
+                if not isinstance(match, str):
+                    match = str(match)
+                match = f"0-success-{match}".encode('utf-8')
+                result = tn.read_until(match, timeout)
+                if result:
+                    result = result.decode("utf-8")
+                return result
+            except socket.error as e:
+                # 不通的IP
+                return False
+    
+        def write(command):
+            try:
+                # 确保 command 是字符串
+                if not isinstance(command, str):
+                    command = str(command)
+                stamp = time.time()
+                command = f"{command} && echo $?-success-{stamp}\n\n"
+                tn.write(command.encode('utf-8'))
+                time.sleep(1)
+                return str(stamp)
+            except socket.error as e:
+                # 不通的IP
+                return False
+            except Exception as e:
+                logging.error(f"写入命令时发生错误: {e}")
+                return "其他问题"
+        return read_until, write
+    except Exception as e:
+        logging.error(f"错误：{e}")
+        return False
 
 # 扫描指定范围内的IP地址的指定端口
-
 def tel_print(str: bytes):
     content = str.rfind(b"\r\n")
     if content == -1:
@@ -97,32 +133,26 @@ def lan_ip_detect():
 def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
     try:
         tn = telnetlib.Telnet(host, port, timeout=2)
+        read_until, write = indentify_tn(tn)
         s = tn.read_until(b"login: ", timeout=2)
         index = tel_print(s)
         result = s[index::].decode("utf-8")
         if "login: " in result:
             tn.write(b"root\n")
-            tn.read_until(b"Password: ", timeout=2)
+            tn.read_until(b"password: ", timeout=2)
             tn.write(b"ya!2dkwy7-934^\n")
-            tn.read_until(b"login: can't chdir to home directory '/home/root'", timeout=2)
-            tn.write(b"cat customer/screenId.ini\n")
-            tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success\n")
-            start_time = time.time()
-
-            # 循环防止未来得及读取到屏幕id的情况
-            while True:
-                if time.time() - start_time > 10:
-                    break
-                time.sleep(0.3)
-                s = tn.read_very_eager().decode("utf-8")
-                pattern = r'deviceId=([^\r\n]*)'
-                pattern2 = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
-                match = re.search(pattern, s)
-                match2 = re.search(pattern2, s)
-                if match is not None and match2 is not None:
-                    match_result1 = match.group(1)
-                    match_result2 = match2.group()
-                    return [match_result1, match_result2, host, tn]
+            tn.read_until(b"# ", timeout=2)
+            wr = write("cat customer/screenId.ini")
+            wr = write("cat /sys/class/net/wlan0/address && echo $?-success")
+            result = read_until(wr, 2)
+            pattern = r'deviceId=([^\r\n]*)'
+            pattern2 = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
+            match = re.search(pattern, result)
+            match2 = re.search(pattern2, result)
+            if match is not None and match2 is not None:
+                match_result1 = match.group(1)
+                match_result2 = match2.group()
+                return [match_result1, match_result2, host, tn]
         else:
             tn.close()
     except Exception as e:
@@ -207,10 +237,10 @@ def main():
         for i in range(retry_times):
             bind_result = bind_device(first_detect_devices_result[mac]['screen_id'])
             if bind_result:
-                logging.error("绑定成功")
+                logging.info("绑定成功")
                 update_result = update_fw(first_detect_devices_result[mac]['tn'])  # 更新固件
                 if update_result:
-                    logging.error("更新固件成功")
+                    logging.info("更新固件成功")
                 else:
                     logging.error("更新固件失败")
                 break
@@ -220,7 +250,7 @@ def main():
         else:
             logging.error("绑定失败，已重试三次")
     else:
-        print("烧录失败")
+        logging.error("烧录失败")
 
 def write_screen_id(check_wifi, ask_user_for_config):
     device_num = False
@@ -275,20 +305,33 @@ def write_screen_id(check_wifi, ask_user_for_config):
                     return False
 
             def write_screen_id(dest_tn):
-                cmd_list = ['echo "" > /customer/screenId.ini && echo $?-success-clear\n', f'echo [screen] > /customer/screenId.ini && echo $?-success-echo[screen]\n', f'echo deviceId={first_detect_devices_result[mac]['screen_id']} >> /customer/screenId.ini && echo $?-success-echo-screenID\n']
-                cmd_check_keyword = ['0-success-clear', '0-success-echo[screen]', '0-success-echo-screenID']
-                for index, cmd in enumerate(cmd_list):
-                    dest_tn.write(cmd.encode('utf-8'))
-                    result = dest_tn.read_until(cmd_check_keyword[index].encode('utf-8'), timeout=5).decode("utf-8")
-                    if cmd_check_keyword[index] not in result:
+                read_until, write = indentify_tn(dest_tn)
+                cmd_list = ['echo "" > /customer/screenId.ini && echo $?-success-clear', f'echo [screen] > /customer/screenId.ini && echo $?-success-echo[screen]', f'echo deviceId={first_detect_devices_result[mac]['screen_id']} >> /customer/screenId.ini && echo $?-success-echo-screenID']
+                for cmd in (cmd_list):
+                    rw = write(cmd)
+                    result = read_until(rw, 60)
+                    print(result)
+                    if rw not in result:
                         return False
+                print(f"屏幕id写入成功")
                 return True
             def read_dest_mac_and_write_screenId():
                 dest_tn = get_dest_tn(mac, juadge_the_current_is_the_dest_devices)
+                read_until, write = indentify_tn(dest_tn)
+                waitting_index = 7
                 while True:
-                    dest_tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success-read-mac\n")
-                    result = dest_tn.read_until(b"0-success-read-mac", timeout=1).decode("utf-8")
-                    if "0-success-read-mac" in result:
+                    while True:
+                        try:
+                            rw = write("cat /sys/class/net/wlan0/address")
+                            break
+                        except Exception as e:
+                            logging.info("设备系统未完全启动，等待启动重连")
+                            time.sleep(abs(waitting_index) ** 2)
+                            waitting_index -= 2
+
+                    result = read_until(rw, 2)
+                    logging.info(f"result: {result}")
+                    if rw in result:
                         try_times = 3
                         while True:
                             if write_screen_id(dest_tn):
@@ -359,49 +402,34 @@ def update_fw(tn:telnetlib.Telnet):
         return server, http_thread, tmp_dir, current_dir
 
     def excuse_cmd(tn:telnetlib.Telnet):
+        read_until, write = indentify_tn(tn)
         version_num = input("请输入版本号：")
         print(f"开始更新固件")
         cmd_list = [
-            "sed -i 's/FB_BUFFER_LEN[[:space:]]*=[[:space:]]*[0-9]*/FB_BUFFER_LEN = 9000/' /config/fbdev.ini && echo $?-success-sed\n",
-            "mkdir -p /customer/tmp && echo $?-success-mkdir\n",
-            "cd /customer/tmp && echo $?-success-cd\n",
-            "tar -xvf /upgrade/restore/SStarOta.bin.gz && echo $?-success-tar\n",
-            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' /software/version.ini > temp.ini && mv temp.ini /software/version.ini && echo $?-success-modify-version1.ini\n",
-            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' ./version.ini > temp.ini && mv temp.ini ./version.ini && echo $?-success-modify-version2.ini\n",
-            "cd ./script && echo $?-success-cd-script\n",
-            "rm ./software_init.sh && echo $?-success-rm-software_init.sh\n",
-            f"wget http://{current_host}:{host_port}/software_init.sh && echo $?-success-wget-software_init.sh\n",
-            "chmod +x ./software_init.sh && echo $?-success-chmod-software_init.sh\n",
-            "cd .. && echo $?-success-cd-..\n",
-            "tar -czvf SStarOta.bin.gz ./* && echo $?-success-tar-c\n",
-            "mv ./SStarOta.bin.gz /upgrade/restore/SStarOta.bin.gz && echo $?-success-mv-SStarOta.bin.gz\n",
-            "rm -rf /customer/tmp && echo $?-success-rm-tmp\n",
-            "md5sum /upgrade/restore/SStarOta.bin.gz | awk '{print $1}' > /upgrade/restore/rst_md5 && echo $?-success-md5sum\n",
-            "sync && echo $?-success-sync\n"
+            "sed -i 's/FB_BUFFER_LEN[[:space:]]*=[[:space:]]*[0-9]*/FB_BUFFER_LEN = 9000/' /config/fbdev.ini && echo $?-success-sed",
+            "mkdir -p /customer/tmp && echo $?-success-mkdir",
+            "cd /customer/tmp && echo $?-success-cd",
+            "tar -xvf /upgrade/restore/SStarOta.bin.gz && echo $?-success-tar",
+            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' /software/version.ini > temp.ini && mv temp.ini /software/version.ini && echo $?-success-modify-version1.ini",
+            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' ./version.ini > temp.ini && mv temp.ini ./version.ini && echo $?-success-modify-version2.ini",
+            "cd ./script && echo $?-success-cd-script",
+            "rm ./software_init.sh && echo $?-success-rm-software_init.sh",
+            f"wget http://{current_host}:{host_port}/software_init.sh && echo $?-success-wget-software_init.sh",
+            "chmod +x ./software_init.sh && echo $?-success-chmod-software_init.sh",
+            "cd .. && echo $?-success-cd-..",
+            "tar -czvf SStarOta.bin.gz ./* && echo $?-success-tar-c",
+            "mv ./SStarOta.bin.gz /upgrade/restore/SStarOta.bin.gz && echo $?-success-mv-SStarOta.bin.gz",
+            "rm -rf /customer/tmp && echo $?-success-rm-tmp",
+            "md5sum /upgrade/restore/SStarOta.bin.gz | awk '{print $1}' > /upgrade/restore/rst_md5 && echo $?-success-md5sum",
+            "sync && echo $?-success-sync"
         ]
 
-        check_keyword = ['0-success-sed', 
-                         '0-success-mkdir', 
-                         '0-success-cd', 
-                         '0-success-tar', 
-                         '0-success-modify-version1.ini',
-                         '0-success-modify-version2.ini',
-                         '0-success-cd-script', 
-                         '0-success-rm-software_init.sh', 
-                         '0-success-wget-software_init.sh', 
-                         '0-success-chmod-software_init.sh', 
-                         '0-success-cd-..',
-                         '0-success-tar-c', 
-                         '0-success-mv-SStarOta.bin.gz', 
-                         '0-success-rm-tmp', 
-                         '0-success-md5sum',
-                         '0-success-sync']
-        for index, cmd in enumerate(cmd_list):
+        for cmd in (cmd_list):
             logging.info(f"执行命令: {cmd.strip()}")
-            tn.write(cmd.encode('utf-8'))
-            result = tn.read_until(check_keyword[index].encode('utf-8'), timeout=60).decode("utf-8")
+            rw = write(cmd)
+            result = read_until(rw, 60)
             logging.info(f"命令返回: {result}")
-            if check_keyword[index] in result:
+            if rw in result:
                 continue
             else:
                 logging.error(f"命令未成功: {cmd.strip()}")
@@ -437,6 +465,7 @@ def update_fw(tn:telnetlib.Telnet):
 def get_dest_tn(mac, juadge_the_current_is_the_dest_devices):
     while True:
         dest_tn = juadge_the_current_is_the_dest_devices()
+        sys.exit()
         if dest_tn:
             return dest_tn
         else:
@@ -515,9 +544,10 @@ def bind_device(screen_id: str):
         return False
 
 def get_device_mac_address(tn:telnetlib.Telnet):
-    tn.write(b"cat /sys/class/net/wlan0/address && echo $?-success\n")
-    result = tn.read_until(b"0-success", timeout=1).decode("utf-8")
-    if "0-success" in result:
+    read_until, write = indentify_tn(tn)
+    rw = write("cat /sys/class/net/wlan0/address && echo $?-success")
+    result = read_until(rw, 2)
+    if rw in result:
         pattern = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
         match = re.search(pattern, result)
         if match:

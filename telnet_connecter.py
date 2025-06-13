@@ -3,6 +3,7 @@ import re
 import telnetlib3
 import logging
 
+
 # 嘗試導入 telnetlib3 的特定類型，如果失敗也沒關係，後面有檢查
 try:
     from telnetlib3.stream_writers import TelnetWriterUnicode
