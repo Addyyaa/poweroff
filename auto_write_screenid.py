@@ -327,6 +327,12 @@ def write_screen_id(check_wifi, ask_user_for_config):
             
             mac = scanner_config_device()
             # 将屏幕信息保存下来防止程序意外关闭，找不到之前的屏幕id
+            # 确保resource目录存在
+            resource_dir = "resource"
+            if not os.path.exists(resource_dir):
+                os.makedirs(resource_dir)
+                logging.info(f"已创建目录: {resource_dir}")
+            
             with open("resource/burnNote.txt", "w", encoding="utf-8") as f:
                 device_info = first_detect_devices_result[mac]
                 f.write(f"屏幕ID: {device_info['screen_id']}\n")
