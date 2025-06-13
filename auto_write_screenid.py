@@ -337,7 +337,7 @@ def write_screen_id(check_wifi, ask_user_for_config):
             
             def ask_for_start():
                 while True:
-                    start_burn = str(input("是否开始烧录：(y/n)"))
+                    start_burn = str(input("是否已插上U盘开始进入烧录界面：(y/n)"))
                     if start_burn.upper() in ['Y', 'N']:
                         if start_burn.upper() == 'Y':
                             break 
@@ -352,23 +352,25 @@ def write_screen_id(check_wifi, ask_user_for_config):
                     pre_ip = first_detect_devices_result[mac]['ip']
                     # 此时设备正在重启，还未连接WiFi，所以需要轮询连接
                     wait_index = 9
-                    try_times = 3
+                    start_time = time.time()
                     while True:
                         try:
-                            if try_times <= 0:
+                            if time.time() - start_time > 600:
                                 logging.warning("设备IP可能发生变更，重新扫描整个网络")
                                 first_detect_devices(network_ips)
                                 tn = first_detect_devices_result[mac]['tn']
                                 break
                             tn = telnetlib.Telnet(pre_ip, 23, timeout=5)
-                            try_times -= 1
                             first_detect_devices_result[mac]['tn'] = tn
                             break
                         except Exception as e:
                             wait_index = abs(wait_index - 2)
                             wait_time = wait_index ** 2
-                            logging.warning(f"设备未上线，等待{wait_time}秒后重新尝试...")
-                            time.sleep(wait_time)
+                            # 实现读秒效果
+                            for remaining in range(wait_time, 0, -1):
+                                print(f"\r设备未上线，剩余等待时间：{remaining}秒", end="", flush=True)
+                                time.sleep(1)
+                            print(f"\r重新尝试连接...")
                             continue
                     mac_address = get_device_mac_address(tn)
                     if mac_address == mac:
