@@ -43,11 +43,19 @@ def indentify_tn(tn:telnetlib.Telnet):
     
         def write(command):
             try:
+                # 执行命令前先发送回车检测是否需要登录
+                tn.write(b'\n')
+                result = tn.read_until(b'login:', 0.5)
+                if b'login:' in result:
+                    tn.write(b'root\n')
+                    tn.read_until(b'password:', 1)
+                    tn.write(b'ya!2dkwy7-934^\n')
+                    tn.read_until(b'# ',1)
                 # 确保 command 是字符串
                 if not isinstance(command, str):
                     command = str(command)
                 stamp = time.time()
-                command = f"{command} && echo $?-success-{stamp}\n\n"
+                command = f"{command} && echo $?-success-{stamp}\n"
                 tn.write(command.encode('utf-8'))
                 time.sleep(1)
                 return str(stamp)
@@ -106,7 +114,7 @@ def get_local_ip():
     return ip
 
 current_host = get_local_ip()
-print(f"本机IP：{current_host}")
+logging.info(f"本机IP：{current_host}")
 
 def lan_ip_detect():
     global current_host
@@ -143,8 +151,10 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.write(b"ya!2dkwy7-934^\n")
             tn.read_until(b"# ", timeout=2)
             wr = write("cat customer/screenId.ini")
-            wr = write("cat /sys/class/net/wlan0/address && echo $?-success")
-            result = read_until(wr, 2)
+            result1 = read_until(wr, 2)
+            wr = write("cat /sys/class/net/wlan0/address")
+            result2 = read_until(wr, 2)
+            result = result1 + result2
             pattern = r'deviceId=([^\r\n]*)'
             pattern2 = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
             match = re.search(pattern, result)
@@ -207,16 +217,25 @@ def main():
         while True:
             ssid = get_current_wifi_ssid()
             if wifi_sec in ssid:
-                print("已连接到小米路由器，请将电脑WiFi连接至 【NETGEAR12-5G】wifi")
+                logging.info("已连接到小米路由器，请将电脑WiFi连接至 【NETGEAR12-5G】wifi")
                 break
             if wifi not in ssid:
-                print("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
+                logging.info("未连接到小米路由器，请将电脑WiFi连接至 【xiaomi】wifi")
                 time.sleep(3)
                 continue
             else:
                 break
-        print("已连接WiFi：【xiaomi】")
+        logging.info("已连接WiFi：【xiaomi】")
     
+    def check_is_new_version(tn: telnetlib.Telnet):
+        read_until, write = indentify_tn(tn)
+        rw = write("ls /tmp/app_versions && echo $?-app_versions")
+        result = read_until(rw, 2)
+        if "0-app_versions" in result:
+            return True
+        else:
+            return False
+
     def ask_user_for_config():
         while True:
             try:
@@ -224,31 +243,50 @@ def main():
                 if device_num.isdigit():
                     device_num = int(device_num)
                 else:
-                    print("输入有误，请重新输入")
+                    logging.error("输入有误，请重新输入")
                     continue
                 break
             except Exception:
-                print("输入有误，请重新输入")
+                logging.error("输入有误，请重新输入")
         return device_num
     mac = write_screen_id(check_wifi, ask_user_for_config)
-    if mac:
+    is_new_version = check_is_new_version(first_detect_devices_result[mac]['tn'])
+    if mac and is_new_version:
         # id 烧录后开始绑定屏幕组
         retry_times = 3
+        for i in range(retry_times):
+            update_result = update_fw(first_detect_devices_result[mac]['tn'])  # 更新固件
+            if update_result:
+                logging.info("更新固件成功")
+                break
+            else:
+                logging.error("更新固件失败")
+                continue
+        else:
+            logging.error("更新固件失败，已重试三次")
         for i in range(retry_times):
             bind_result = bind_device(first_detect_devices_result[mac]['screen_id'])
             if bind_result:
                 logging.info("绑定成功")
-                update_result = update_fw(first_detect_devices_result[mac]['tn'])  # 更新固件
-                if update_result:
-                    logging.info("更新固件成功")
-                else:
-                    logging.error("更新固件失败")
                 break
             else:
                 logging.error(f"绑定失败，正在重试（{i+1}/{retry_times}）")
                 time.sleep(1)
         else:
             logging.error("绑定失败，已重试三次")
+    elif not is_new_version:
+        retry_times = 3
+        for i in range(retry_times):
+            bind_result = bind_device(first_detect_devices_result[mac]['screen_id'])
+            if bind_result:
+                logging.info("绑定成功")
+                break
+            else:
+                logging.error(f"绑定失败，正在重试（{i+1}/{retry_times}）")
+                time.sleep(1)
+        else:
+            logging.error("绑定失败，已重试三次")
+        logging.info(f"{first_detect_devices_result[mac]["screen_id"]}\t已经烧录完成，请拔掉U盘")
     else:
         logging.error("烧录失败")
 
@@ -265,25 +303,38 @@ def write_screen_id(check_wifi, ask_user_for_config):
                 try:
                     config_id = int(user_input)
                 except Exception:
-                    print("输入有误，请重新输入")
+                    logging.error("输入有误，请重新输入")
                     continue
                 break
 
         if not device_num:
             config_id = str(config_id)
-            print(f"强制检测的屏幕id：{config_id}")
+            logging.info(f"强制检测的屏幕id：{config_id}")
             def scanner_config_device():
-                addresses = lan_ip_detect()
-                addresses = [str(ip) for ip in addresses]
-                while True:
-                    first_detect_devices(addresses)
-                    for mac_address in first_detect_devices_result:
-                        if config_id in first_detect_devices_result[mac_address]["screen_id"]:
-                            print(f"已扫描到强制检测的屏幕id：{first_detect_devices_result[mac_address]['screen_id']}\t{first_detect_devices_result[mac_address]['ip']}")
-                            return mac_address
-                    print("未扫描到强制检测的屏幕id，即将重试")
+                try:
+                    addresses = lan_ip_detect()
+                    addresses = [str(ip) for ip in addresses]
+                    while True:
+                        first_detect_devices(addresses)
+                        for mac_address in first_detect_devices_result:
+                            if config_id in first_detect_devices_result[mac_address]["screen_id"]:
+                                logging.info(f"已扫描到强制检测的屏幕id：{first_detect_devices_result[mac_address]['screen_id']}\t{first_detect_devices_result[mac_address]['ip']}")
+                                return mac_address
+                        logging.error("未扫描到强制检测的屏幕id，即将重试")
+                except Exception as e:
+                    logging.error(f"scanner_config_device错误：{e}")
+                    return False
             
             mac = scanner_config_device()
+            # 将屏幕信息保存下来防止程序意外关闭，找不到之前的屏幕id
+            with open("resource/burnNote.txt", "w", encoding="utf-8") as f:
+                device_info = first_detect_devices_result[mac]
+                f.write(f"屏幕ID: {device_info['screen_id']}\n")
+                f.write(f"IP地址: {device_info['ip']}\n")
+                f.write(f"MAC地址: {mac}\n")
+                f.write(f"保存时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n")
+            logging.info(f"设备信息已保存到 resource/burnNote.txt")
+            
             def ask_for_start():
                 while True:
                     start_burn = str(input("是否开始烧录：(y/n)"))
@@ -297,24 +348,56 @@ def write_screen_id(check_wifi, ask_user_for_config):
             ask_for_start()
 
             def juadge_the_current_is_the_dest_devices():
-                tn = first_detect_devices_result[mac]['tn']
-                mac_address = get_device_mac_address(tn)
-                if mac_address == mac:
-                    return tn
-                else:
+                try:
+                    pre_ip = first_detect_devices_result[mac]['ip']
+                    # 此时设备正在重启，还未连接WiFi，所以需要轮询连接
+                    wait_index = 9
+                    try_times = 3
+                    while True:
+                        try:
+                            if try_times <= 0:
+                                logging.warning("设备IP可能发生变更，重新扫描整个网络")
+                                first_detect_devices(network_ips)
+                                tn = first_detect_devices_result[mac]['tn']
+                                break
+                            tn = telnetlib.Telnet(pre_ip, 23, timeout=5)
+                            try_times -= 1
+                            first_detect_devices_result[mac]['tn'] = tn
+                            break
+                        except Exception as e:
+                            wait_index = abs(wait_index - 2)
+                            wait_time = wait_index ** 2
+                            logging.warning(f"设备未上线，等待{wait_time}秒后重新尝试...")
+                            time.sleep(wait_time)
+                            continue
+                    mac_address = get_device_mac_address(tn)
+                    if mac_address == mac:
+                        return tn
+                    else:
+                        logging.info(f"先前的设备ip：{pre_ip}，先前的mac：{mac}，当前的mac{mac_address}")
+                        return False
+                except Exception as e:
+                    logging.error(f"juadge_the_current_is_the_dest_devices:{e}")
                     return False
 
             def write_screen_id(dest_tn):
-                read_until, write = indentify_tn(dest_tn)
-                cmd_list = ['echo "" > /customer/screenId.ini && echo $?-success-clear', f'echo [screen] > /customer/screenId.ini && echo $?-success-echo[screen]', f'echo deviceId={first_detect_devices_result[mac]['screen_id']} >> /customer/screenId.ini && echo $?-success-echo-screenID']
-                for cmd in (cmd_list):
-                    rw = write(cmd)
-                    result = read_until(rw, 60)
-                    print(result)
-                    if rw not in result:
-                        return False
-                print(f"屏幕id写入成功")
-                return True
+                try:
+                    read_until, write = indentify_tn(dest_tn)
+                    cmd_list = ['echo "" > /customer/screenId.ini', 
+                                f'echo [screen] > /customer/screenId.ini', 
+                                f'echo deviceId={first_detect_devices_result[mac]['screen_id']} >> /customer/screenId.ini']
+                    for cmd in (cmd_list):
+                        rw = write(cmd)
+                        result = read_until(rw, 60)
+                        print_result = result.replace(" && echo $?-success-" + rw, "")
+                        print_result = print_result.replace("0-success-" + rw, "")
+                        logging.info(print_result)
+                        if rw not in result:
+                            return False
+                    logging.info(f"屏幕id写入成功")
+                    return True
+                except Exception as e:
+                    logging.error(f"write_screen_id{e}")
             def read_dest_mac_and_write_screenId():
                 dest_tn = get_dest_tn(mac, juadge_the_current_is_the_dest_devices)
                 read_until, write = indentify_tn(dest_tn)
@@ -347,13 +430,12 @@ def write_screen_id(check_wifi, ask_user_for_config):
                         time.sleep(3)
                         continue
             
-            try:
-                if read_dest_mac_and_write_screenId():
-                    return mac
-                else:
-                    return False
-            except Exception as e:
-                logging.error(f"错误：{e}")
+
+            if read_dest_mac_and_write_screenId():
+                return mac
+            else:
+                return False
+
         else:
             # 执行扫描指定数量的设备
             addresses = lan_ip_detect()
@@ -366,7 +448,7 @@ def write_screen_id(check_wifi, ask_user_for_config):
                 else:
                     time.sleep(1)
                     continue
-            print(f"已扫描到{len(result)}\t{result}个设备")
+            logging.info(f"已扫描到{len(result)}\t{result}个设备")
     except Exception as e:
         logging.error(f"错误：{e}")
 
@@ -374,7 +456,7 @@ def update_fw(tn:telnetlib.Telnet):
 
     def start_http_server():
         server = HTTPServer(('0.0.0.0', host_port), SimpleHTTPRequestHandler)
-        print(f"Serving HTTP Enabled")
+        logging.info(f"Serving HTTP Enabled")
         thread = threading.Thread(target=server.serve_forever)
         thread.daemon = True
         thread.start()
@@ -404,31 +486,32 @@ def update_fw(tn:telnetlib.Telnet):
     def excuse_cmd(tn:telnetlib.Telnet):
         read_until, write = indentify_tn(tn)
         version_num = input("请输入版本号：")
-        print(f"开始更新固件")
+        logging.info(f"开始更新固件")
         cmd_list = [
-            "sed -i 's/FB_BUFFER_LEN[[:space:]]*=[[:space:]]*[0-9]*/FB_BUFFER_LEN = 9000/' /config/fbdev.ini && echo $?-success-sed",
-            "mkdir -p /customer/tmp && echo $?-success-mkdir",
-            "cd /customer/tmp && echo $?-success-cd",
-            "tar -xvf /upgrade/restore/SStarOta.bin.gz && echo $?-success-tar",
-            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' /software/version.ini > temp.ini && mv temp.ini /software/version.ini && echo $?-success-modify-version1.ini",
-            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' ./version.ini > temp.ini && mv temp.ini ./version.ini && echo $?-success-modify-version2.ini",
-            "cd ./script && echo $?-success-cd-script",
-            "rm ./software_init.sh && echo $?-success-rm-software_init.sh",
-            f"wget http://{current_host}:{host_port}/software_init.sh && echo $?-success-wget-software_init.sh",
-            "chmod +x ./software_init.sh && echo $?-success-chmod-software_init.sh",
-            "cd .. && echo $?-success-cd-..",
-            "tar -czvf SStarOta.bin.gz ./* && echo $?-success-tar-c",
-            "mv ./SStarOta.bin.gz /upgrade/restore/SStarOta.bin.gz && echo $?-success-mv-SStarOta.bin.gz",
-            "rm -rf /customer/tmp && echo $?-success-rm-tmp",
-            "md5sum /upgrade/restore/SStarOta.bin.gz | awk '{print $1}' > /upgrade/restore/rst_md5 && echo $?-success-md5sum",
-            "sync && echo $?-success-sync"
+            "sed -i 's/FB_BUFFER_LEN[[:space:]]*=[[:space:]]*[0-9]*/FB_BUFFER_LEN = 9000/' /config/fbdev.ini",
+            "mkdir -p /customer/tmp",
+            "cd /customer/tmp",
+            "tar -xvf /upgrade/restore/SStarOta.bin.gz",
+            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' /software/version.ini > temp.ini && mv temp.ini /software/version.ini",
+            f"awk -F '=' '$2 !~ /^[[:space:]]*$/ {{gsub(/^[[:space:]]+|[[:space:]]+$/, \"\", $2); $2=\"{version_num}\"; print $1 \"=\" $2}} $2 ~ /^[[:space:]]*$/ {{print $0}}' ./version.ini > temp.ini && mv temp.ini ./version.ini",
+            "cd ./script",
+            "rm ./software_init.sh",
+            f"wget http://{current_host}:{host_port}/software_init.sh",
+            "chmod +x ./software_init.sh",
+            "cd ..",
+            "tar -czvf SStarOta.bin.gz ./*",
+            "mv ./SStarOta.bin.gz /upgrade/restore/SStarOta.bin.gz",
+            "rm -rf /customer/tmp",
+            "md5sum /upgrade/restore/SStarOta.bin.gz | awk '{print $1}' > /upgrade/restore/rst_md5",
+            "sync"
         ]
 
         for cmd in (cmd_list):
-            logging.info(f"执行命令: {cmd.strip()}")
             rw = write(cmd)
             result = read_until(rw, 60)
-            logging.info(f"命令返回: {result}")
+            print_result = result.replace(" && echo $?-success-" + rw, "")
+            print_result = print_result.replace("0-success-" + rw, "")
+            logging.info(f"Addy: {print_result}")
             if rw in result:
                 continue
             else:
@@ -442,7 +525,6 @@ def update_fw(tn:telnetlib.Telnet):
     for i in range(3):
         exc_result = excuse_cmd(tn)
         if exc_result:
-            tn.write(b"reboot\n")
             time.sleep(10)
             tn.write(b"exit\n")
             # 关闭http服务
@@ -465,11 +547,15 @@ def update_fw(tn:telnetlib.Telnet):
 def get_dest_tn(mac, juadge_the_current_is_the_dest_devices):
     while True:
         dest_tn = juadge_the_current_is_the_dest_devices()
-        sys.exit()
         if dest_tn:
             return dest_tn
         else:
-            dest_tn = scan_device_which_need_write_screenid(mac)
+           try:
+             logging.info("设备IP发生改变")
+             dest_tn = scan_device_which_need_write_screenid(mac)
+           except Exception as e:
+            logging.error(f"错误2{e}")
+
             if dest_tn:
                 return dest_tn
             else:
@@ -545,7 +631,11 @@ def bind_device(screen_id: str):
 
 def get_device_mac_address(tn:telnetlib.Telnet):
     read_until, write = indentify_tn(tn)
-    rw = write("cat /sys/class/net/wlan0/address && echo $?-success")
+    try:
+        rw = write("cat /sys/class/net/wlan0/address && echo $?-success")
+    except Exception as e:
+        logging.error(f"get_device_mac_address错误：{e}")
+        return False
     result = read_until(rw, 2)
     if rw in result:
         pattern = r'([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}'
