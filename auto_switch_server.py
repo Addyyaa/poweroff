@@ -92,7 +92,9 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
             tn.read_until(b"login: can't chdir to home directory '/home/root'", timeout=2)
             tn.write(b"cat customer/screenId.ini\n")
             # 循环防止未来得及读取到屏幕id的情况
-            while True:
+            max_attempts = 3  # 最大尝试次数
+            attempts = 0
+            while attempts < max_attempts:
                 time.sleep(0.3)
                 s = tn.read_very_eager().decode("utf-8")
                 pattern = r"deviceId=\s*(\w+)"
@@ -100,6 +102,12 @@ def scan_port(host, port) -> Union[list, bool, telnetlib.Telnet]:
                 if match:
                     screen = match.group(1)
                     break
+                attempts += 1
+            else:
+                # 如果超过最大尝试次数仍未找到deviceId，关闭连接并返回False
+                logging.warning(f"主机 {host} 未能获取到deviceId，跳过此设备")
+                tn.close()
+                return False
             return [screen, tn, host]
         else:
             tn.close()

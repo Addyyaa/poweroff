@@ -659,3 +659,4 @@ def get_device_mac_address(tn:telnetlib.Telnet):
 
 if __name__ == '__main__':
     main()
+    input("请按回车键退出程序")
