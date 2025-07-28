@@ -1,6 +1,7 @@
 import ipaddress
 import socket
 import sys
+import io
 import telnetlib
 import logging
 import time
@@ -12,7 +13,8 @@ import psutil
 
 # 定义日志
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d', level=logging.INFO)
-
+# 强制设置 stdout 使用 UTF-8 编码
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 cn_server_release = "cloud-service.austinelec.com"
 cn_server_test = "139.224.192.36"
 en_server_release = "cloud-service-us.austinelec.com"
@@ -126,6 +128,11 @@ def modify_location(screen: str, tn: telnetlib.Telnet, host: str, option: str):
     mqtt_prefix = "echo [mqtt]"
     cn_mqtt_value_prefix = "echo cn_host="
     en_mqtt_value_prefix = "echo en_host="
+    port_section = "echo [http]"
+    cn_port_prefix = "echo cn_port="
+    en_port_prefix = "echo en_port="
+    cn_port_value = "8080" 
+    en_port_value = "8080"
     local_prefix = "echo [local]"
     local_value_prefix = "echo local="
     old_local_ini_path = "/upgrade/local.ini"
@@ -203,6 +210,19 @@ def modify_location(screen: str, tn: telnetlib.Telnet, host: str, option: str):
             if not is_new_fw:
                 tn.write(f"{local_prefix} > {old_local_ini_path}\n".encode('utf-8'))
                 tn.write(f"{local_value_prefix}{local_value} >> {old_local_ini_path}\n".encode('utf-8'))
+        
+        # 兼容云同步版本增加了http端口
+        if is_new_fw:
+            if option not in ["1", "2", "3", "4"]:
+                cn_port_value = "8082"
+                tn.write(f"{port_section} >> {mqtt_ini}\n".encode('utf-8'))
+                tn.write(f"{cn_port_prefix}{cn_port_value} >> {mqtt_ini}\n".encode('utf-8'))
+                tn.write(f"{en_port_prefix}{en_port_value} >> {mqtt_ini}\n".encode('utf-8'))
+            else:
+                tn.write(f"{port_section} >> {mqtt_ini}\n".encode('utf-8'))
+                tn.write(f"{cn_port_prefix}{cn_port_value} >> {mqtt_ini}\n".encode('utf-8'))
+                tn.write(f"{en_port_prefix}{en_port_value} >> {mqtt_ini}\n".encode('utf-8'))
+        
         # 校验是否切换成功
         def check_switch_success(tn: telnetlib.Telnet):
             ck_cmd = [f'killall -9 mymqtt\n', f'cat {mqtt_log} | grep {selected_server} && echo $?-success\n']
