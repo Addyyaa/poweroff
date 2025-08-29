@@ -131,10 +131,12 @@ def lan_ip_detect():
                 if addr.family == socket.AF_INET:
                     addresses.append({f'{interface}': addr.address, 'netmask': addr.netmask})
     ipv4 = addresses
+    print(ipv4)
     netmast = max(ipv4, key=lambda x: netmask_to_int(x['netmask']))['netmask']
     network = list(ipaddress.IPv4Network(f"{gateway}/{netmast}", strict=False).hosts())
     global network_ips
     network_ips = network
+    print(network_ips)
     return network
 
 
