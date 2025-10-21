@@ -1,3 +1,4 @@
+import gettext
 import ipaddress
 import socket
 import sys
@@ -16,6 +17,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s - Line %(lineno)d",
     level=logging.INFO,
 )
+
 # 强制设置 stdout 使用 UTF-8 编码
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 cn_server_release = "cloud-service.austinelec.com"
@@ -24,6 +26,9 @@ en_server_release = "cloud-service-us.austinelec.com"
 en_server_test = "18.215.241.226"
 mqtt_port = 1883
 # 扫描指定范围内的IP地址的指定端口
+# lang = gettext.translation("messages", localedir="F:\Project\poweroff\messages.pot")
+# lang.install()
+# _ = lang.gettext
 
 
 def tel_print(str: bytes):
